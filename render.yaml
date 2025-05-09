@@ -20,9 +20,9 @@ services:
       - key: YOMA_AUTH_URL
         value: https://yoma.world/auth/realms/yoma
       - key: ADVANTA_TOKEN
-        sync: false # This means you'll need to set this manually in the Render dashboard
+        value: test-token # Mock value from webhook.test.js
       - key: YOMA_CLIENT_ID
-        sync: false # This means you'll need to set this manually in the Render dashboard
+        value: mock-client-id # Mock value for testing
       - key: YOMA_CLIENT_SECRET
-        sync: false # This means you'll need to set this manually in the Render dashboard
+        value: mock-client-secret # Mock value for testing
     autoDeploy: true 
