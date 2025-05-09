@@ -1,0 +1,28 @@
+# Render configuration file (Blueprint API)
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: advanta-yoma-integration
+    env: node
+    region: oregon # You can change this to the region closest to your users
+    plan: free # Change to a paid plan for production
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: YOMA_API_URL
+        value: https://api.yoma.world/api/v3
+      - key: YOMA_AUTH_URL
+        value: https://yoma.world/auth/realms/yoma
+      - key: ADVANTA_TOKEN
+        sync: false # This means you'll need to set this manually in the Render dashboard
+      - key: YOMA_CLIENT_ID
+        sync: false # This means you'll need to set this manually in the Render dashboard
+      - key: YOMA_CLIENT_SECRET
+        sync: false # This means you'll need to set this manually in the Render dashboard
+    autoDeploy: true 
