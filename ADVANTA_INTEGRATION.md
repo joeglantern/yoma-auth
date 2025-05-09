@@ -105,4 +105,5 @@ curl -X POST https://yoma-auth.onrender.com/advanta-webhook \
 
 ## Support
 
-For any issues or questions regarding this integration, please contact your Yoma representative. 
+For any issues or questions regarding this integration, please contact Libanjoe7@gmail.com or +254758009278.
+ 
