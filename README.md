@@ -22,8 +22,8 @@ A Node.js backend service that receives webhook notifications from Advanta and r
 
 1. Clone the repository:
    ```
-   git clone <repository-url>
-   cd advanta-yoma-integration
+   git clone https://github.com/joeglantern/yoma-auth
+   cd yoma-auth
    ```
 
 2. Install dependencies:
