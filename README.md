@@ -126,32 +126,41 @@ When a user is registered through this service:
 
 For more details on the user experience, refer to the [User Guide](USER_GUIDE.md).
 
+## Advanta Integration Requirements
+
+### What Advanta Needs to Provide
+
+1. **Shortcode Information**:
+   - The shortcode number that users will text to
+   - Confirmation of shortcode registration with telecom providers
+
+2. **Integration Confirmation**:
+   - Confirmation that they've configured the shortcode to collect required user information
+   - Confirmation that they'll format the data according to our webhook requirements
+   - Confirmation that they'll send the data to our webhook endpoint with the authentication token
+
+3. **Testing Schedule**:
+   - A proposed date for testing the integration end-to-end
+
+### What We Provide to Advanta
+
+1. **Webhook Endpoint**:
+   - URL: `https://yoma-auth.onrender.com/advanta-webhook`
+   - Authentication token: `xS4tFJmsHJFyFGb5XQYj1KFol4CIw9jemRRBazHregA=`
+
+2. **Documentation**:
+   - [Advanta Integration Guide](ADVANTA_INTEGRATION.md) with all technical details
+   - This README with setup instructions
+   - [User Guide](USER_GUIDE.md) for understanding the user experience
+
+3. **Support**:
+   - Contact: Libanjoe7@gmail.com or +254758009278
+   - Technical support for integration issues
+
 ## Documentation
 
-- [Deployment Guide](DEPLOYMENT.md) - General instructions for deploying to production
-- [Render Deployment Guide](DEPLOYMENT_RENDER.md) - Specific instructions for deploying to Render
-- [Testing Guide](TESTING_DEPLOYMENT.md) - How to test your deployment
-- [User Guide](USER_GUIDE.md) - Guide for end-users on the SMS signup process
 - [B2B API Documentation](B2B.md) - Official Yoma API documentation
-
-## Deployment
-
-### Heroku Deployment
-
-```
-heroku create
-git push heroku main
-heroku config:set ADVANTA_TOKEN=your_advanta_token
-heroku config:set YOMA_CLIENT_ID=your_client_id
-heroku config:set YOMA_CLIENT_SECRET=your_client_secret
-```
-
-### Render Deployment
-
-1. Connect your repository to Render
-2. Create a new Web Service
-3. Set the environment variables in the Render dashboard
-4. Deploy the service
+- [Advanta Integration Guide](ADVANTA_INTEGRATION.md) - Detailed integration instructions for Advanta
 
 ## Error Handling
 
