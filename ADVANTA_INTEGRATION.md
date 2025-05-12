@@ -4,7 +4,7 @@ This document provides instructions for Advanta to integrate with the Yoma Auth 
 
 ## Webhook Details
 
-- **Endpoint URL**: `https://yoma-auth.onrender.com/advanta-webhook`
+- **Endpoint URL**: `https://yoma-auth-le50.onrender.com/advanta-webhook`
 - **Method**: POST
 - **Content-Type**: application/json
 
@@ -118,7 +118,7 @@ To integrate your shortcode service with the Yoma Auth webhook, please follow th
 For testing purposes, you can use the provided token and send a request with valid data:
 
 ```
-curl -X POST https://yoma-auth.onrender.com/advanta-webhook \
+curl -X POST https://yoma-auth-le50.onrender.com/advanta-webhook \
   -H "Content-Type: application/json" \
   -H "X-Advanta-Token: xS4tFJmsHJFyFGb5XQYj1KFol4CIw9jemRRBazHregA=" \
   -d '{
