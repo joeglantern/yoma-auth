@@ -2,30 +2,63 @@
  * Controller for handling Advanta webhook requests
  */
 
-/**
- * Process the webhook from Advanta
- * @param {Request} req Express request object
- * @param {Response} res Express response object
- */
-async function processWebhook(req, res) {
-  try {
-    const userData = req.body;
-    console.log('Received user data from Advanta:', userData);
+const logger = require('../utils/logger');
 
-    // Return success response with received data
-    return res.status(201).json({
+/**
+ * Process webhook data from Advanta
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+const processWebhook = async (req, res) => {
+  try {
+    // Extract data from Advanta's format
+    const { shortcode, mobile, message } = req.body;
+    logger.info('Received webhook data:', { shortcode, mobile, message });
+
+    // Parse the message to extract user info
+    // Expected format: "firstName:John,surname:Doe,phoneNumber:+254XXXXXXXXX,countryCodeAlpha2:KE"
+    const userInfo = {};
+    const messageParts = message.split(',');
+    
+    for (const part of messageParts) {
+      const [key, value] = part.split(':');
+      if (key && value) {
+        userInfo[key.trim()] = value.trim();
+      }
+    }
+
+    // Convert to Yoma format
+    const yomaFormat = {
+      firstName: userInfo.firstName,
+      surname: userInfo.surname,
+      phoneNumber: mobile, // Use the mobile from Advanta
+      countryCodeAlpha2: userInfo.countryCodeAlpha2
+    };
+
+    logger.info('Converted to Yoma format:', yomaFormat);
+
+    // Return success response with both original and converted data
+    return res.status(200).json({
       success: true,
-      message: 'Data received successfully',
-      data: userData
+      message: 'Data received and converted successfully',
+      data: {
+        original: {
+          shortcode,
+          mobile,
+          message
+        },
+        yomaFormat
+      }
     });
+
   } catch (error) {
-    console.error('Error processing webhook:', error);
+    logger.error('Error processing webhook:', error);
     return res.status(500).json({
       success: false,
-      error: 'Internal server error occurred while processing the request'
+      message: 'Internal server error'
     });
   }
-}
+};
 
 /**
  * Health check endpoint handler

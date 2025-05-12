@@ -6,20 +6,35 @@ const express = require('express');
 const router = express.Router();
 
 const { verifyAdvantaToken } = require('../middleware/auth');
-const { validateWebhookPayload, checkValidationResult } = require('../middleware/validation');
-const webhookController = require('../controllers/webhookController');
+const { processWebhook } = require('../controllers/webhookController');
+const { validateAdvantaWebhook } = require('../validators/webhookValidator');
 
-// Webhook endpoint with authentication and validation middleware
+// Advanta webhook endpoint
 router.post(
   '/advanta-webhook',
   verifyAdvantaToken,
-  validateWebhookPayload,
-  checkValidationResult,
-  webhookController.processWebhook
+  (req, res, next) => {
+    // Use the custom validator as middleware
+    const validationResult = validateAdvantaWebhook(req);
+    if (!validationResult.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: validationResult.error
+      });
+    }
+    next();
+  },
+  processWebhook
 );
 
 // Health check endpoint
-router.get('/health', webhookController.healthCheck);
+router.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'UP',
+    message: 'Service is running',
+    timestamp: new Date().toISOString()
+  });
+});
 
 // Root endpoint for testing
 router.get('/', (req, res) => {
