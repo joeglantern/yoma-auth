@@ -26,7 +26,9 @@ The webhook expects a JSON payload with the following structure:
   "email": "String",              // Required if phoneNumber not provided
   "phoneNumber": "String",        // Required if email not provided
   "countryCodeAlpha2": "String",  // Required (2-letter country code)
-  "dateOfBirth": "YYYY-MM-DD"     // Optional
+  "dateOfBirth": "YYYY-MM-DD",    // Optional
+  "educationId": "String",        // Required, obtained from /lookup/education
+  "genderId": "String"            // Required, obtained from /lookup/gender
 }
 ```
 
@@ -36,6 +38,8 @@ The webhook expects a JSON payload with the following structure:
 - **email** or **phoneNumber**: At least one contact method is required
 - **countryCodeAlpha2**: Required, ISO 3166-1 alpha-2 country code (e.g., "KE" for Kenya)
 - **dateOfBirth**: Optional, format must be YYYY-MM-DD
+- **educationId**: Required, ID obtained from the `/lookup/education` endpoint
+- **genderId**: Required, ID obtained from the `/lookup/gender` endpoint
 
 ## Response Formats
 
@@ -90,7 +94,7 @@ To integrate your shortcode service with the Yoma Auth webhook, please follow th
    - Configure the shortcode to receive user data via SMS
 
 2. **Build data collection flow**:
-   - Create SMS prompts to collect required user information (first name, surname, email/phone, country, DOB)
+   - Create SMS prompts to collect required user information (first name, surname, email/phone, country, DOB, education, gender)
    - Implement logic to handle multi-message conversations if needed
    - Store partially collected data until submission is complete
 
@@ -105,6 +109,10 @@ To integrate your shortcode service with the Yoma Auth webhook, please follow th
    - Send confirmation SMS to users upon successful data receipt
    - Notify users of any errors that need correction
 
+5. **Use Lookup Endpoints**:
+   - Before sending data, query the `/lookup/education` and `/lookup/gender` endpoints to obtain the correct IDs.
+   - Include these IDs in the webhook request payload.
+
 ## Testing
 
 For testing purposes, you can use the provided token and send a request with valid data:
@@ -114,12 +122,17 @@ curl -X POST https://yoma-auth.onrender.com/advanta-webhook \
   -H "Content-Type: application/json" \
   -H "X-Advanta-Token: xS4tFJmsHJFyFGb5XQYj1KFol4CIw9jemRRBazHregA=" \
   -d '{
+    "shortcode": "12345",
+    "mobile": "+254758009278",
+    "message": "firstName:Liban,surname:Joe,email:Libanjoe7@gmail.com,displayName:Liban Joe,educationId:3fa85f64-5717-4562-b3fc-2c963f66afa6,genderId:3fa85f64-5717-4562-b3fc-2c963f66afa6,dateOfBirth:2003-08-03,countryCodeAlpha2:KE",
     "firstName": "Liban",
     "surname": "Joe",
     "email": "Libanjoe7@gmail.com",
     "phoneNumber": "+254758009278",
     "countryCodeAlpha2": "KE",
-    "dateOfBirth": "2003-08-03"
+    "dateOfBirth": "2003-08-03",
+    "educationId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "genderId": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
   }'
 ```
 
