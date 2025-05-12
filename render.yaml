@@ -22,7 +22,7 @@ services:
       - key: YOMA_AUTH_URL
         value: https://yoma.world/auth/realms/yoma
       - key: ADVANTA_TOKEN
-        value: test-token # Replace with production token before going live
+        value: xS4tFJmsHJFyFGb5XQYj1KFol4CIw9jemRRBazHregA=
       - key: YOMA_CLIENT_ID
         value: mock-client-id # Replace with real client ID before going live
       - key: YOMA_CLIENT_SECRET
