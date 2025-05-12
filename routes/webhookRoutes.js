@@ -21,4 +21,16 @@ router.post(
 // Health check endpoint
 router.get('/health', webhookController.healthCheck);
 
+// Root endpoint for testing
+router.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Advanta-Yoma Integration Service is running',
+    endpoints: {
+      webhook: '/advanta-webhook',
+      health: '/health'
+    }
+  });
+});
+
 module.exports = router; 
