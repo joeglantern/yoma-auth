@@ -16,7 +16,7 @@ const processWebhook = async (req, res) => {
     logger.info('Received webhook data:', { shortcode, mobile, message });
 
     // Parse the message to extract user info
-    // Expected format: "firstName:John,surname:Doe,phoneNumber:+254XXXXXXXXX,countryCodeAlpha2:KE"
+    // Expected format: "firstName:John,surname:Doe,email:john@example.com,displayName:John Doe,educationId:uuid,genderId:uuid,dateOfBirth:2000-01-01,countryCodeAlpha2:KE"
     const userInfo = {};
     const messageParts = message.split(',');
     
@@ -32,6 +32,11 @@ const processWebhook = async (req, res) => {
       firstName: userInfo.firstName,
       surname: userInfo.surname,
       phoneNumber: mobile, // Use the mobile from Advanta
+      email: userInfo.email,
+      displayName: userInfo.displayName,
+      educationId: userInfo.educationId,
+      genderId: userInfo.genderId,
+      dateOfBirth: userInfo.dateOfBirth,
       countryCodeAlpha2: userInfo.countryCodeAlpha2
     };
 
