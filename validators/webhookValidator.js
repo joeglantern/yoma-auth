@@ -41,7 +41,16 @@ const validateAdvantaWebhook = (req) => {
 
     // Validate message format
     const messageParts = message.split(',');
-    const requiredFields = ['firstName', 'surname', 'countryCodeAlpha2'];
+    const requiredFields = [
+      'firstName',
+      'surname',
+      'countryCodeAlpha2',
+      'email',
+      'displayName',
+      'educationId',
+      'genderId',
+      'dateOfBirth'
+    ];
     
     for (const field of requiredFields) {
       if (!message.includes(`${field}:`)) {
