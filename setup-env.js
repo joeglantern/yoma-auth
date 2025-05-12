@@ -2,7 +2,7 @@
  * Environment Setup Script for Advanta-Yoma Integration
  * 
  * This script creates a .env file with the appropriate configuration
- * based on whether you're setting up for development or production.
+ * based on whether you're setting up for development, staging, or production.
  */
 
 const fs = require('fs');
@@ -36,12 +36,35 @@ NODE_ENV=development
 LOG_LEVEL=info
 `;
 
+// Staging environment configuration
+const stagingEnvContent = `# Server configuration
+PORT=3000
+
+# Advanta Authentication
+ADVANTA_TOKEN=staging-advanta-token
+
+# Yoma API configuration
+YOMA_API_URL=https://api.yoma.world/api/v3
+YOMA_AUTH_URL=https://yoma.world/auth/realms/yoma
+
+# Yoma OAuth credentials
+YOMA_CLIENT_ID=your_staging_client_id_here
+YOMA_CLIENT_SECRET=your_staging_client_secret_here
+
+# Environment settings
+NODE_ENV=staging
+DATABASE_SCHEMA=advanta_staging
+
+# Logging
+LOG_LEVEL=info
+`;
+
 // Production environment configuration
 const prodEnvContent = `# Server configuration
 PORT=3000
 
 # Advanta Authentication
-ADVANTA_TOKEN=your_real_advanta_token_here
+ADVANTA_TOKEN=xS4tFJmsHJFyFGb5XQYj1KFol4CIw9jemRRBazHregA=
 
 # Yoma API configuration
 YOMA_API_URL=https://api.yoma.world/api/v3
@@ -62,7 +85,7 @@ console.log('🚀 Advanta-Yoma Integration Environment Setup');
 console.log('---------------------------------------------');
 console.log('This script will create a .env file for your environment.\n');
 
-rl.question('Which environment are you setting up? (dev/prod): ', (environment) => {
+rl.question('Which environment are you setting up? (dev/staging/prod): ', (environment) => {
   let envContent;
   
   if (environment.toLowerCase() === 'prod' || environment.toLowerCase() === 'production') {
@@ -70,9 +93,9 @@ rl.question('Which environment are you setting up? (dev/prod): ', (environment) 
     envContent = prodEnvContent;
     
     // For production, we'll ask for the real values
-    rl.question('\nEnter your Advanta token: ', (advantaToken) => {
+    rl.question('\nEnter your Advanta token (press Enter to use generated secure token): ', (advantaToken) => {
       if (advantaToken) {
-        envContent = envContent.replace('your_real_advanta_token_here', advantaToken);
+        envContent = envContent.replace('xS4tFJmsHJFyFGb5XQYj1KFol4CIw9jemRRBazHregA=', advantaToken);
       }
       
       rl.question('Enter your Yoma client ID: ', (clientId) => {
@@ -83,6 +106,30 @@ rl.question('Which environment are you setting up? (dev/prod): ', (environment) 
         rl.question('Enter your Yoma client secret: ', (clientSecret) => {
           if (clientSecret) {
             envContent = envContent.replace('your_real_client_secret_here', clientSecret);
+          }
+          
+          writeEnvFile(envContent);
+          rl.close();
+        });
+      });
+    });
+  } else if (environment.toLowerCase() === 'staging') {
+    console.log('\nSetting up for STAGING environment...');
+    envContent = stagingEnvContent;
+    
+    rl.question('\nEnter your staging Advanta token (press Enter to use default): ', (advantaToken) => {
+      if (advantaToken) {
+        envContent = envContent.replace('staging-advanta-token', advantaToken);
+      }
+      
+      rl.question('Enter your staging Yoma client ID: ', (clientId) => {
+        if (clientId) {
+          envContent = envContent.replace('your_staging_client_id_here', clientId);
+        }
+        
+        rl.question('Enter your staging Yoma client secret: ', (clientSecret) => {
+          if (clientSecret) {
+            envContent = envContent.replace('your_staging_client_secret_here', clientSecret);
           }
           
           writeEnvFile(envContent);

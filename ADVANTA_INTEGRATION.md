@@ -15,7 +15,7 @@ All requests must include the following header:
 X-Advanta-Token: test-token
 ```
 
-Note: For production, this token should be updated to a more secure value.
+Note: For production, you will be provided with a secure token. The test token should only be used for initial testing.
 
 ## Request Format
 
@@ -84,6 +84,48 @@ The webhook expects a JSON payload with the following structure:
   "error": "Failed to create user in Yoma"
 }
 ```
+
+## Implementation Steps for Advanta
+
+To integrate your shortcode service with the Yoma Auth webhook, please follow these steps:
+
+1. **Set up shortcode service**:
+   - Register a shortcode with local telecom providers
+   - Configure the shortcode to receive user data via SMS
+
+2. **Build data collection flow**:
+   - Create SMS prompts to collect required user information (first name, surname, email/phone, country, DOB)
+   - Implement logic to handle multi-message conversations if needed
+   - Store partially collected data until submission is complete
+
+3. **Develop webhook client**:
+   - Create code to format collected user data into the JSON structure specified above
+   - Implement HTTP POST requests to our webhook endpoint
+   - Add the authentication header with the provided token
+   - Build error handling and retry logic (recommended: 3 retries with exponential backoff)
+
+4. **Implement response handling**:
+   - Parse response JSON from the webhook
+   - Store user IDs returned from successful registrations
+   - Send confirmation SMS to users upon successful registration
+   - Notify users of any errors that need correction
+
+## Testing Environment
+
+For integration testing, please use our staging environment:
+
+- **Staging Endpoint**: `https://yoma-auth-staging.onrender.com/advanta-webhook`
+- **Staging Token**: `staging-advanta-token`
+
+The staging environment is a separate deployment that does not affect production data. Use this environment to test your integration before going live.
+
+## Production Environment
+
+Once your integration has been tested and is ready for production:
+
+1. We will provide you with a secure production token
+2. Update your webhook client to use the production endpoint and token
+3. Coordinate with our team on the go-live date
 
 ## Testing
 

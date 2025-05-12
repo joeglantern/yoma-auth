@@ -3,6 +3,7 @@
 # Updated for testing on May 9, 2025
 
 services:
+  # Production Environment
   - type: web
     name: advanta-yoma-integration
     env: node
@@ -21,9 +22,44 @@ services:
       - key: YOMA_AUTH_URL
         value: https://yoma.world/auth/realms/yoma
       - key: ADVANTA_TOKEN
-        value: test-token # Mock value from webhook.test.js
+        value: test-token # Replace with production token before going live
       - key: YOMA_CLIENT_ID
-        value: mock-client-id # Mock value for testing
+        value: mock-client-id # Replace with real client ID before going live
       - key: YOMA_CLIENT_SECRET
-        value: mock-client-secret # Mock value for testing
-    autoDeploy: true 
+        value: mock-client-secret # Replace with real client secret before going live
+    autoDeploy: true
+    branches:
+      - name: main
+        envVars:
+          - key: NODE_ENV
+            value: production
+
+  # Staging Environment
+  - type: web
+    name: advanta-yoma-integration-staging
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: staging
+      - key: PORT
+        value: 3000
+      - key: YOMA_API_URL
+        value: https://api.yoma.world/api/v3
+      - key: YOMA_AUTH_URL
+        value: https://yoma.world/auth/realms/yoma
+      - key: ADVANTA_TOKEN
+        value: staging-advanta-token
+      - key: YOMA_CLIENT_ID
+        value: staging-client-id
+      - key: YOMA_CLIENT_SECRET
+        value: staging-client-secret
+      - key: DATABASE_SCHEMA
+        value: advanta_staging
+    autoDeploy: true
+    branches:
+      - name: staging 
