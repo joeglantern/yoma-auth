@@ -12,10 +12,8 @@ This document provides instructions for Advanta to integrate with the Yoma Auth 
 
 All requests must include the following header:
 ```
-X-Advanta-Token: test-token
+X-Advanta-Token: xS4tFJmsHJFyFGb5XQYj1KFol4CIw9jemRRBazHregA=
 ```
-
-Note: For production, you will be provided with a secure token. The test token should only be used for initial testing.
 
 ## Request Format
 
@@ -45,15 +43,13 @@ The webhook expects a JSON payload with the following structure:
 ```json
 {
   "success": true,
-  "user": {
-    "id": "uuid",
-    "username": "email-or-phone",
+  "message": "Data received successfully",
+  "data": {
     "firstName": "String",
     "surname": "String",
     "email": "String",
-    "emailConfirmed": false,
     "phoneNumber": "String",
-    "phoneNumberConfirmed": false,
+    "countryCodeAlpha2": "String",
     "dateOfBirth": "YYYY-MM-DD"
   }
 }
@@ -81,7 +77,7 @@ The webhook expects a JSON payload with the following structure:
 ```json
 {
   "success": false,
-  "error": "Failed to create user in Yoma"
+  "error": "Internal server error occurred while processing the request"
 }
 ```
 
@@ -106,35 +102,17 @@ To integrate your shortcode service with the Yoma Auth webhook, please follow th
 
 4. **Implement response handling**:
    - Parse response JSON from the webhook
-   - Store user IDs returned from successful registrations
-   - Send confirmation SMS to users upon successful registration
+   - Send confirmation SMS to users upon successful data receipt
    - Notify users of any errors that need correction
-
-## Testing Environment
-
-For integration testing, please use our staging environment:
-
-- **Staging Endpoint**: `https://yoma-auth-staging.onrender.com/advanta-webhook`
-- **Staging Token**: `staging-advanta-token`
-
-The staging environment is a separate deployment that does not affect production data. Use this environment to test your integration before going live.
-
-## Production Environment
-
-Once your integration has been tested and is ready for production:
-
-1. We will provide you with a secure production token
-2. Update your webhook client to use the production endpoint and token
-3. Coordinate with our team on the go-live date
 
 ## Testing
 
-For testing purposes, you can use the provided test-token and send a request with valid data:
+For testing purposes, you can use the provided token and send a request with valid data:
 
 ```
 curl -X POST https://yoma-auth.onrender.com/advanta-webhook \
   -H "Content-Type: application/json" \
-  -H "X-Advanta-Token: test-token" \
+  -H "X-Advanta-Token: xS4tFJmsHJFyFGb5XQYj1KFol4CIw9jemRRBazHregA=" \
   -d '{
     "firstName": "Liban",
     "surname": "Joe",
