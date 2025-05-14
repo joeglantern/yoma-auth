@@ -126,7 +126,7 @@ The service implements a simple, one-step flow to collect user information:
    - User sends a single message with all required information in the format:
      `firstName,surname,email,displayName,dateOfBirth,countryCodeAlpha2,education,gender[,phoneNumber]`
    - Example: `Liban,Joe,Libanjoe7@gmail.com,Liban Joe,2003-08-03,KE,Secondary,Male`
-   - Note: phoneNumber is optional. If not provided, the sender's number will be used automatically.
+   - Note: phoneNumber is optional. If provided, it will be used for account registration; otherwise, no phone number will be associated with the account.
    - The education and gender values should match the options list provided in step 1
 
 3. **Registration**:

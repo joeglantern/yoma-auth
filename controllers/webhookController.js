@@ -159,7 +159,6 @@ const processWebhook = async (req, res) => {
         firstName,
         surname,
         email,
-        phoneNumber: mobile, // Default to the sender's number
         displayName,
         dateOfBirth,
         countryCodeAlpha2
@@ -173,7 +172,7 @@ const processWebhook = async (req, res) => {
         // Check if a custom phone number was provided (9th element if present)
         if (parts.length >= 9 && parts[8] && parts[8].trim()) {
           userData.phoneNumber = parts[8].trim();
-          logger.info(`Using custom phone number: ${userData.phoneNumber} instead of ${mobile}`);
+          logger.info(`Using provided phone number: ${userData.phoneNumber}`);
         }
         
         // Find education ID by name
@@ -215,7 +214,7 @@ const processWebhook = async (req, res) => {
         // Check if a custom phone number was provided (7th element if present)
         if (parts.length >= 7 && parts[6] && parts[6].trim()) {
           userData.phoneNumber = parts[6].trim();
-          logger.info(`Using custom phone number: ${userData.phoneNumber} instead of ${mobile}`);
+          logger.info(`Using provided phone number: ${userData.phoneNumber}`);
         }
         
         // In fallback mode, use default IDs if available
@@ -245,10 +244,10 @@ const processWebhook = async (req, res) => {
         userConversations.delete(mobile);
         
         // Return success response
-        return res.status(200).json({
-          success: true,
+    return res.status(200).json({
+      success: true,
           message: 'User created successfully',
-          data: {
+      data: {
             original: { shortcode, mobile, message },
             yomaFormat: userData,
             yomaResponse

@@ -31,7 +31,7 @@ X-Advanta-Token: xS4tFJmsHJFyFGb5XQYj1KFol4CIw9jemRRBazHregA=
    - When a user first texts the shortcode, we'll respond with instructions and options
    - The user will send back all their information in a single message in the format: `firstName,surname,email,displayName,dateOfBirth,countryCodeAlpha2,education,gender[,phoneNumber]`
    - For education and gender, users should provide the text values (e.g., "Secondary", "Male") not numeric IDs
-   - The phoneNumber field is optional. If not provided, the sender's number will be used
+   - The phoneNumber field is optional. If provided, it will be used for registration; otherwise, the account will be created without a phone number
    - We'll process the registration and send a confirmation message
 4. All response messages for the user will be sent back in our webhook responses
 
