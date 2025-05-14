@@ -6,7 +6,13 @@ const axios = require('axios');
 
 // Constants
 const YOMA_API_URL = process.env.YOMA_API_URL || 'https://api.yoma.world/api/v3';
+// Ensure we're using the correct base URL format from the documentation
+const YOMA_STAGE_API_URL = 'https://v3api.stage.yoma.world/api/v3';
+const YOMA_PROD_API_URL = 'https://api.yoma.world/api/v3';
 const YOMA_AUTH_URL = process.env.YOMA_AUTH_URL || 'https://yoma.world/auth/realms/yoma';
+
+// Determine if we're in stage or production and set the actual API URL accordingly
+const API_URL = process.env.YOMA_API_URL?.includes('stage') ? YOMA_STAGE_API_URL : YOMA_PROD_API_URL;
 
 /**
  * Get an authentication token from Yoma's OAuth service
@@ -92,9 +98,9 @@ async function createUser(userData) {
       };
     }
 
-    // Send request to Yoma API
+    // Send request to Yoma API using the correct URL
     const response = await axios.post(
-      `${YOMA_API_URL}/externalpartner/user`, 
+      `${API_URL}/externalpartner/user`, 
       payload,
       {
         headers: {
@@ -147,9 +153,14 @@ async function getReferenceData(type) {
       return [];
     }
     
+    // Use the correct endpoint path based on B2B documentation
+    const endpoint = `${API_URL}/lookup/${type}`;
+    
+    console.log(`Fetching ${type} data from endpoint: ${endpoint}`);
+    
     // Send request to Yoma API
     const response = await axios.get(
-      `${YOMA_API_URL}/lookup/${type}`,
+      endpoint,
       {
         headers: {
           'Authorization': `Bearer ${authToken}`

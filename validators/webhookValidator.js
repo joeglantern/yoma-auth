@@ -17,7 +17,7 @@ const validateAdvantaWebhook = (req) => {
 
     const { shortcode, mobile, message } = req.body;
 
-    // Validate required fields
+    // Validate required fields from Advanta
     if (!shortcode) {
       return {
         isValid: false,
@@ -39,28 +39,9 @@ const validateAdvantaWebhook = (req) => {
       };
     }
 
-    // Validate message format
-    const messageParts = message.split(',');
-    const requiredFields = [
-      'firstName',
-      'surname',
-      'countryCodeAlpha2',
-      'email',
-      'displayName',
-      'educationId',
-      'genderId',
-      'dateOfBirth'
-    ];
+    // The conversational flow will handle the validation of the actual user data
+    // We're just validating the Advanta webhook format here
     
-    for (const field of requiredFields) {
-      if (!message.includes(`${field}:`)) {
-        return {
-          isValid: false,
-          error: `Message must contain ${field}`
-        };
-      }
-    }
-
     return {
       isValid: true
     };

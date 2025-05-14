@@ -4,8 +4,9 @@ A Node.js backend service that receives webhook notifications from Advanta and r
 
 ## Features
 
-- Secure webhook endpoint (`/advanta-webhook`) for receiving JSON data from Advanta
-- Data validation for required fields: `firstName`, `surname`, `countryCodeAlpha2`, and either `phoneNumber` or `email`
+- Secure webhook endpoint (`/advanta-webhook`) for receiving SMS data from Advanta
+- Conversational SMS flow to guide users through the registration process
+- Data validation for required information
 - Secure authentication using API keys
 - Integration with Yoma's B2B API to register users
 - Comprehensive error handling and logging
@@ -84,27 +85,24 @@ npm run prod
 **Request Body Example**:
 ```json
 {
-  "firstName": "Liban",
-  "surname": "Joe",
-  "phoneNumber": "+254758009278",
-  "email": "Libanjoe7@gmail.com",
-  "countryCodeAlpha2": "KE",
-  "displayName": "Liban Joe",
-  "dateOfBirth": "2003-08-03"
+  "shortcode": "22317",
+  "mobile": "+254758009278",
+  "message": "User's message text"
 }
 ```
 
 **Required Fields**:
-- `firstName`
-- `surname`
-- `countryCodeAlpha2`
-- Either `phoneNumber` or `email` (or both)
+- `shortcode`
+- `mobile`
+- `message`
 
 **Optional Fields**:
+- `firstName`
+- `surname`
+- `email`
 - `displayName`
-- `educationId`
-- `genderId`
 - `dateOfBirth`
+- `countryCodeAlpha2`
 
 ### Health Check
 
@@ -115,14 +113,30 @@ GET /health
 
 ## SMS Signup Flow
 
-When a user is registered through this service:
+The service implements a simple, one-step flow to collect user information:
 
-1. Their information is sent to Yoma's B2B API
-2. Yoma creates the user account with a temporary password
-3. The phone number is initially unconfirmed
-4. When the user first logs in to Yoma:
-   - They will receive an OTP via SMS to verify their phone number
-   - They will be prompted to create a new password
+1. **Initiation**: 
+   - User sends any message to the Advanta shortcode
+   - The service responds with comprehensive instructions including:
+     - The required information format
+     - List of available education options with IDs
+     - List of available gender options with IDs
+
+2. **Complete Information Submission**:
+   - User sends a single message with all required information in the format:
+     `firstName,surname,email,displayName,dateOfBirth,countryCodeAlpha2,education,gender`
+   - Example: `Liban,Joe,Libanjoe7@gmail.com,Liban Joe,2003-08-03,KE,College/University,Male`
+   - The education and gender values should match the options list provided in step 1
+
+3. **Registration**:
+   - The service validates the provided information
+   - The user is registered with Yoma's B2B API
+   - The user receives a confirmation SMS
+
+4. **First Login**:
+   - When the user first logs in to Yoma:
+     - They will receive an OTP via SMS to verify their phone number
+     - They will be prompted to create a new password
 
 For more details on the user experience, refer to the [User Guide](USER_GUIDE.md).
 

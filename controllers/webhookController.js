@@ -3,6 +3,41 @@
  */
 
 const logger = require('../utils/logger');
+const { createUser, getReferenceData } = require('../services/yomaService');
+const axios = require('axios');
+
+// Store conversation state for users
+const userConversations = new Map();
+
+/**
+ * Sends a response message back to the user via Advanta API
+ * @param {string} mobile - The user's phone number
+ * @param {string} message - The message to send
+ */
+async function sendResponseMessage(mobile, message) {
+  try {
+    // Check if ADVANTA_SMS_API_URL and ADVANTA_SMS_API_KEY are defined
+    if (!process.env.ADVANTA_SMS_API_URL || !process.env.ADVANTA_SMS_API_KEY) {
+      logger.error('Missing Advanta SMS API configuration');
+      return;
+    }
+
+    // Send message using Advanta SMS API
+    await axios.post(
+      process.env.ADVANTA_SMS_API_URL,
+      {
+        apiKey: process.env.ADVANTA_SMS_API_KEY,
+        phoneNumber: mobile,
+        message: message,
+        senderId: process.env.ADVANTA_SENDER_ID || 'YOMA'
+      }
+    );
+    
+    logger.info(`Response message sent to ${mobile}`);
+  } catch (error) {
+    logger.error('Error sending response message:', error);
+  }
+}
 
 /**
  * Process webhook data from Advanta
@@ -15,47 +50,223 @@ const processWebhook = async (req, res) => {
     const { shortcode, mobile, message } = req.body;
     logger.info('Received webhook data:', { shortcode, mobile, message });
 
-    // Parse the message to extract user info
-    // Expected format: "firstName:John,surname:Doe,email:john@example.com,displayName:John Doe,educationId:uuid,genderId:uuid,dateOfBirth:2000-01-01,countryCodeAlpha2:KE"
-    const userInfo = {};
-    const messageParts = message.split(',');
-    
-    for (const part of messageParts) {
-      const [key, value] = part.split(':');
-      if (key && value) {
-        userInfo[key.trim()] = value.trim();
+    // Check if this is a new conversation or restart
+    if (!userConversations.has(mobile) || message.toLowerCase().trim() === 'restart') {
+      try {
+        // Fetch education and gender options from Yoma
+        logger.info('Fetching education and gender options for new conversation');
+        const educationOptions = await getReferenceData('education');
+        const genderOptions = await getReferenceData('gender');
+        
+        // Build instructions including all options
+        let instructionsMessage = "Welcome to Yoma! Please provide your information in the following format:\n" +
+          "firstName,surname,email,displayName,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2,education,gender\n\n" +
+          "Example: Liban,Joe,Libanjoe7@gmail.com,Liban Joe,2003-08-03,KE,Secondary,Male\n\n" +
+          "Available Education Options (use the exact name):\n";
+          
+        educationOptions.forEach((option) => {
+          instructionsMessage += `${option.name}\n`;
+        });
+        
+        instructionsMessage += "\nAvailable Gender Options (use the exact name):\n";
+        
+        genderOptions.forEach((option) => {
+          instructionsMessage += `${option.name}\n`;
+        });
+        
+        // Store options in conversation state for later validation
+        userConversations.set(mobile, { 
+          state: 'awaiting_all_info',
+          timestamp: Date.now(),
+          educationOptions,
+          genderOptions
+        });
+        
+        // Send instructions to user
+        await sendResponseMessage(mobile, instructionsMessage);
+        
+        // Respond to Advanta that we're handling it
+        return res.status(200).json({
+          success: true,
+          message: 'Instructions sent to user'
+        });
+      } catch (error) {
+        logger.error('Error fetching options:', error);
+        
+        // If we can't fetch options, send basic instructions
+        const fallbackInstructions = 
+          "Welcome to Yoma! Please provide your information in the following format:\n" +
+          "firstName,surname,email,displayName,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2\n\n" +
+          "Example: Liban,Joe,Libanjoe7@gmail.com,Liban Joe,2003-08-03,KE";
+          
+        // Store in conversation state
+        userConversations.set(mobile, { 
+          state: 'awaiting_all_info',
+          timestamp: Date.now(),
+          useFallback: true
+        });
+        
+        // Send fallback instructions
+        await sendResponseMessage(mobile, fallbackInstructions);
+        
+        return res.status(200).json({
+          success: true,
+          message: 'Fallback instructions sent to user'
+        });
       }
     }
 
-    // Convert to Yoma format
-    const yomaFormat = {
-      firstName: userInfo.firstName,
-      surname: userInfo.surname,
-      phoneNumber: mobile, // Use the mobile from Advanta
-      email: userInfo.email,
-      displayName: userInfo.displayName,
-      educationId: userInfo.educationId,
-      genderId: userInfo.genderId,
-      dateOfBirth: userInfo.dateOfBirth,
-      countryCodeAlpha2: userInfo.countryCodeAlpha2
-    };
-
-    logger.info('Converted to Yoma format:', yomaFormat);
-
-    // Return success response with both original and converted data
+    // Get the current conversation state
+    const conversation = userConversations.get(mobile);
+    
+    // Handle the complete info submission
+    if (conversation.state === 'awaiting_all_info') {
+      // Parse the message containing user information
+      const parts = message.split(',').map(part => part.trim());
+      
+      // Check if we're using fallback mode (no education/gender IDs)
+      if (conversation.useFallback && parts.length < 6) {
+        // Not enough information provided
+        await sendResponseMessage(mobile, 
+          "Information incomplete. Please provide all required fields:\n" +
+          "firstName,surname,email,displayName,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2"
+        );
+        
+        return res.status(200).json({
+          success: true,
+          message: 'Requested more information from user (fallback mode)'
+        });
+      } else if (!conversation.useFallback && parts.length < 8) {
+        // Not enough information provided for full mode
+        await sendResponseMessage(mobile, 
+          "Information incomplete. Please provide all required fields:\n" +
+          "firstName,surname,email,displayName,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2,education,gender"
+        );
+        
+        return res.status(200).json({
+          success: true,
+          message: 'Requested more information from user'
+        });
+      }
+      
+      // Extract basic information
+      const [firstName, surname, email, displayName, dateOfBirth, countryCodeAlpha2] = parts;
+      
+      // Build user data object
+      const userData = {
+        firstName,
+        surname,
+        email,
+        phoneNumber: mobile,
+        displayName,
+        dateOfBirth,
+        countryCodeAlpha2
+      };
+      
+      // Handle education and gender IDs if not in fallback mode
+      if (!conversation.useFallback) {
+        const educationName = parts[6];
+        const genderName = parts[7];
+        
+        // Find education ID by name
+        const educationOption = conversation.educationOptions.find(
+          option => option.name.toLowerCase() === educationName.toLowerCase()
+        );
+        
+        if (!educationOption) {
+          await sendResponseMessage(mobile, 
+            "Invalid education option. Please use one of the available options exactly as provided."
+          );
+          
+          return res.status(200).json({
+            success: false,
+            message: 'Invalid education option'
+          });
+        }
+        
+        // Find gender ID by name
+        const genderOption = conversation.genderOptions.find(
+          option => option.name.toLowerCase() === genderName.toLowerCase()
+        );
+        
+        if (!genderOption) {
+          await sendResponseMessage(mobile, 
+            "Invalid gender option. Please use one of the available options exactly as provided."
+          );
+          
+          return res.status(200).json({
+            success: false,
+            message: 'Invalid gender option'
+          });
+        }
+        
+        // Add validated IDs to user data
+        userData.educationId = educationOption.id;
+        userData.genderId = genderOption.id;
+      } else {
+        // In fallback mode, use default IDs if available
+        if (process.env.DEFAULT_EDUCATION_ID) {
+          userData.educationId = process.env.DEFAULT_EDUCATION_ID;
+        }
+        
+        if (process.env.DEFAULT_GENDER_ID) {
+          userData.genderId = process.env.DEFAULT_GENDER_ID;
+        }
+      }
+      
+      logger.info('Creating user with data:', userData);
+      
+      try {
+        // Create user in Yoma
+        const yomaResponse = await createUser(userData);
+        logger.info('User created in Yoma:', yomaResponse);
+        
+        // Send success message to user
+        await sendResponseMessage(mobile, 
+          "Thank you! Your account has been created successfully. " +
+          "You will receive a verification message for your first login to Yoma."
+        );
+        
+        // Clear the conversation state
+        userConversations.delete(mobile);
+        
+        // Return success response
     return res.status(200).json({
       success: true,
-      message: 'Data received and converted successfully',
+          message: 'User created successfully',
       data: {
-        original: {
-          shortcode,
-          mobile,
-          message
-        },
-        yomaFormat
+            original: { shortcode, mobile, message },
+            yomaFormat: userData,
+            yomaResponse
+          }
+        });
+      } catch (error) {
+        // Log error details
+        logger.error('Error creating user in Yoma:', error.response?.data || error.message);
+        
+        // Send error message to user
+        await sendResponseMessage(mobile, 
+          "Sorry, we couldn't create your account. " + 
+          "Please try again or contact support."
+        );
+        
+        // Clear the conversation state
+        userConversations.delete(mobile);
+        
+        // Return error response
+        return res.status(500).json({
+          success: false,
+          message: 'Error creating user in Yoma',
+          error: error.response?.data || error.message
+        });
       }
-    });
+    }
 
+    // If we get here, something unexpected happened
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid conversation state'
+    });
   } catch (error) {
     logger.error('Error processing webhook:', error);
     return res.status(500).json({
@@ -80,5 +291,6 @@ function healthCheck(req, res) {
 
 module.exports = {
   processWebhook,
-  healthCheck
+  healthCheck,
+  userConversations
 }; 

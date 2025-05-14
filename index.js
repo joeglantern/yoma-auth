@@ -17,6 +17,10 @@ process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 // Import routes
 const webhookRoutes = require('./routes/webhookRoutes');
 
+// Import conversation cleanup
+const { setupPeriodicCleanup } = require('./utils/conversationCleanup');
+const { userConversations } = require('./controllers/webhookController');
+
 // Initialize Express app
 const app = express();
 
@@ -57,6 +61,9 @@ if (require.main === module) {
   // Constants
   const PORT = process.env.PORT || 3000;
   
+  // Set up conversation cleanup (run every 15 minutes, expire after 30 minutes)
+  setupPeriodicCleanup(userConversations);
+
   // Start the server
   app.listen(PORT, () => {
     console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
