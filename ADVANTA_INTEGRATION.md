@@ -29,8 +29,9 @@ X-Advanta-Token: xS4tFJmsHJFyFGb5XQYj1KFol4CIw9jemRRBazHregA=
 2. Include the authentication header with each request
 3. Our service will handle the registration process:
    - When a user first texts the shortcode, we'll respond with instructions and options
-   - The user will send back all their information in a single message in the format: `firstName,surname,email,displayName,dateOfBirth,countryCodeAlpha2,education,gender`
-   - For education and gender, users should provide the text values (e.g., "College/University", "Male") not numeric IDs
+   - The user will send back all their information in a single message in the format: `firstName,surname,email,displayName,dateOfBirth,countryCodeAlpha2,education,gender[,phoneNumber]`
+   - For education and gender, users should provide the text values (e.g., "Secondary", "Male") not numeric IDs
+   - The phoneNumber field is optional. If not provided, the sender's number will be used
    - We'll process the registration and send a confirmation message
 4. All response messages for the user will be sent back in our webhook responses
 

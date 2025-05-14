@@ -119,13 +119,14 @@ The service implements a simple, one-step flow to collect user information:
    - User sends any message to the Advanta shortcode
    - The service responds with comprehensive instructions including:
      - The required information format
-     - List of available education options with IDs
-     - List of available gender options with IDs
+     - List of available education options with names
+     - List of available gender options with names
 
 2. **Complete Information Submission**:
    - User sends a single message with all required information in the format:
-     `firstName,surname,email,displayName,dateOfBirth,countryCodeAlpha2,education,gender`
-   - Example: `Liban,Joe,Libanjoe7@gmail.com,Liban Joe,2003-08-03,KE,College/University,Male`
+     `firstName,surname,email,displayName,dateOfBirth,countryCodeAlpha2,education,gender[,phoneNumber]`
+   - Example: `Liban,Joe,Libanjoe7@gmail.com,Liban Joe,2003-08-03,KE,Secondary,Male`
+   - Note: phoneNumber is optional. If not provided, the sender's number will be used automatically.
    - The education and gender values should match the options list provided in step 1
 
 3. **Registration**:

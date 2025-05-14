@@ -60,8 +60,9 @@ const processWebhook = async (req, res) => {
         
         // Build instructions including all options
         let instructionsMessage = "Welcome to Yoma! Please provide your information in the following format:\n" +
-          "firstName,surname,email,displayName,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2,education,gender\n\n" +
+          "firstName,surname,email,displayName,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2,education,gender[,phoneNumber]\n\n" +
           "Example: Liban,Joe,Libanjoe7@gmail.com,Liban Joe,2003-08-03,KE,Secondary,Male\n\n" +
+          "Note: phoneNumber is optional. If not provided, your current number will be used.\n\n" +
           "Available Education Options (use the exact name):\n";
           
         educationOptions.forEach((option) => {
@@ -96,8 +97,9 @@ const processWebhook = async (req, res) => {
         // If we can't fetch options, send basic instructions
         const fallbackInstructions = 
           "Welcome to Yoma! Please provide your information in the following format:\n" +
-          "firstName,surname,email,displayName,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2\n\n" +
-          "Example: Liban,Joe,Libanjoe7@gmail.com,Liban Joe,2003-08-03,KE";
+          "firstName,surname,email,displayName,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2[,phoneNumber]\n\n" +
+          "Example: Liban,Joe,Libanjoe7@gmail.com,Liban Joe,2003-08-03,KE\n\n" +
+          "Note: phoneNumber is optional. If not provided, your current number will be used.";
           
         // Store in conversation state
         userConversations.set(mobile, { 
@@ -129,7 +131,7 @@ const processWebhook = async (req, res) => {
         // Not enough information provided
         await sendResponseMessage(mobile, 
           "Information incomplete. Please provide all required fields:\n" +
-          "firstName,surname,email,displayName,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2"
+          "firstName,surname,email,displayName,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2[,phoneNumber]"
         );
         
         return res.status(200).json({
@@ -140,7 +142,7 @@ const processWebhook = async (req, res) => {
         // Not enough information provided for full mode
         await sendResponseMessage(mobile, 
           "Information incomplete. Please provide all required fields:\n" +
-          "firstName,surname,email,displayName,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2,education,gender"
+          "firstName,surname,email,displayName,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2,education,gender[,phoneNumber]"
         );
         
         return res.status(200).json({
@@ -157,7 +159,7 @@ const processWebhook = async (req, res) => {
         firstName,
         surname,
         email,
-        phoneNumber: mobile,
+        phoneNumber: mobile, // Default to the sender's number
         displayName,
         dateOfBirth,
         countryCodeAlpha2
@@ -167,6 +169,12 @@ const processWebhook = async (req, res) => {
       if (!conversation.useFallback) {
         const educationName = parts[6];
         const genderName = parts[7];
+        
+        // Check if a custom phone number was provided (9th element if present)
+        if (parts.length >= 9 && parts[8] && parts[8].trim()) {
+          userData.phoneNumber = parts[8].trim();
+          logger.info(`Using custom phone number: ${userData.phoneNumber} instead of ${mobile}`);
+        }
         
         // Find education ID by name
         const educationOption = conversation.educationOptions.find(
@@ -204,6 +212,12 @@ const processWebhook = async (req, res) => {
         userData.educationId = educationOption.id;
         userData.genderId = genderOption.id;
       } else {
+        // Check if a custom phone number was provided (7th element if present)
+        if (parts.length >= 7 && parts[6] && parts[6].trim()) {
+          userData.phoneNumber = parts[6].trim();
+          logger.info(`Using custom phone number: ${userData.phoneNumber} instead of ${mobile}`);
+        }
+        
         // In fallback mode, use default IDs if available
         if (process.env.DEFAULT_EDUCATION_ID) {
           userData.educationId = process.env.DEFAULT_EDUCATION_ID;
@@ -231,10 +245,10 @@ const processWebhook = async (req, res) => {
         userConversations.delete(mobile);
         
         // Return success response
-    return res.status(200).json({
-      success: true,
+        return res.status(200).json({
+          success: true,
           message: 'User created successfully',
-      data: {
+          data: {
             original: { shortcode, mobile, message },
             yomaFormat: userData,
             yomaResponse
