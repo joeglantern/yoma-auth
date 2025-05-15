@@ -4,6 +4,7 @@
 
 const logger = require('../utils/logger');
 const { createUser, getReferenceData } = require('../services/yomaService');
+const { formatKenyanPhoneNumber } = require('../utils/phoneFormatter');
 const axios = require('axios');
 
 // Store conversation state for users
@@ -47,8 +48,12 @@ async function sendResponseMessage(mobile, message) {
 const processWebhook = async (req, res) => {
   try {
     // Extract data from Advanta's format
-    const { shortcode, mobile, message } = req.body;
-    logger.info('Received webhook data:', { shortcode, mobile, message });
+    const { shortcode, mobile: rawMobile, message } = req.body;
+    
+    // Format the sender's phone number
+    const mobile = formatKenyanPhoneNumber(rawMobile);
+    
+    logger.info('Received webhook data:', { shortcode, mobile, rawMobile, message });
 
     // Check if this is a new conversation or restart
     if (!userConversations.has(mobile) || message.toLowerCase().trim() === 'restart') {
@@ -62,7 +67,7 @@ const processWebhook = async (req, res) => {
         let instructionsMessage = "Welcome to Yoma! Please provide your information in the following format:\n" +
           "firstName,surname,email,displayName,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2,education,gender[,phoneNumber]\n\n" +
           "Example: Liban,Joe,Libanjoe7@gmail.com,Liban Joe,2003-08-03,KE,Secondary,Male\n\n" +
-          "Note: phoneNumber is optional. If not provided, your current number will be used.\n\n" +
+          "Note: phoneNumber is optional. If provided, it will be used for account registration; otherwise, no phone number will be associated with the account.\n\n" +
           "Available Education Options (use the exact name):\n";
           
         educationOptions.forEach((option) => {
@@ -99,7 +104,7 @@ const processWebhook = async (req, res) => {
           "Welcome to Yoma! Please provide your information in the following format:\n" +
           "firstName,surname,email,displayName,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2[,phoneNumber]\n\n" +
           "Example: Liban,Joe,Libanjoe7@gmail.com,Liban Joe,2003-08-03,KE\n\n" +
-          "Note: phoneNumber is optional. If not provided, your current number will be used.";
+          "Note: phoneNumber is optional. If provided, it will be used for account registration; otherwise, no phone number will be associated with the account.";
           
         // Store in conversation state
         userConversations.set(mobile, { 
@@ -171,7 +176,9 @@ const processWebhook = async (req, res) => {
         
         // Check if a custom phone number was provided (9th element if present)
         if (parts.length >= 9 && parts[8] && parts[8].trim()) {
-          userData.phoneNumber = parts[8].trim();
+          // Format phone number before storing
+          const providedPhone = formatKenyanPhoneNumber(parts[8].trim());
+          userData.phoneNumber = providedPhone;
           logger.info(`Using provided phone number: ${userData.phoneNumber}`);
         }
         
@@ -213,7 +220,9 @@ const processWebhook = async (req, res) => {
       } else {
         // Check if a custom phone number was provided (7th element if present)
         if (parts.length >= 7 && parts[6] && parts[6].trim()) {
-          userData.phoneNumber = parts[6].trim();
+          // Format phone number before storing
+          const providedPhone = formatKenyanPhoneNumber(parts[6].trim());
+          userData.phoneNumber = providedPhone;
           logger.info(`Using provided phone number: ${userData.phoneNumber}`);
         }
         
