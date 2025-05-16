@@ -54,7 +54,7 @@ const processWebhook = async (req, res) => {
     const formattedPhone = formatKenyanPhoneNumber(mobile);
     
     // Get reference data
-    const referenceData = await getReferenceData();
+    const referenceData = await getReferenceData("education");
     
     // Check if this is a new user
     if (message.toLowerCase() === 'start' || message.toLowerCase() === 'hi') {
