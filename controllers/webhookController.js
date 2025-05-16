@@ -4,7 +4,7 @@
 
 const logger = require('../utils/logger');
 const { createUser, getReferenceData } = require('../services/yomaService');
-const { formatPhoneNumber } = require('../utils/phoneFormatter');
+const { formatKenyanPhoneNumber } = require('../utils/phoneFormatter');
 const { sendSMS } = require('../services/advantaSMSService');
 
 // Store conversation state for users
@@ -51,7 +51,7 @@ const processWebhook = async (req, res) => {
     }
 
     // Format phone number
-    const formattedPhone = formatPhoneNumber(mobile);
+    const formattedPhone = formatKenyanPhoneNumber(mobile);
     
     // Get reference data
     const referenceData = await getReferenceData();
@@ -196,7 +196,7 @@ Education: ${referenceData.education.map(e => e.name).join(', ')}`;
         // Check if a custom phone number was provided (9th element if present)
         if (parts.length >= 9 && parts[8] && parts[8].trim()) {
           // Format phone number before storing
-          const providedPhone = formatPhoneNumber(parts[8].trim());
+          const providedPhone = formatKenyanPhoneNumber(parts[8].trim());
           userData.phoneNumber = providedPhone;
           logger.info(`Using provided phone number: ${userData.phoneNumber}`);
         }
@@ -240,7 +240,7 @@ Education: ${referenceData.education.map(e => e.name).join(', ')}`;
         // Check if a custom phone number was provided (7th element if present)
         if (parts.length >= 7 && parts[6] && parts[6].trim()) {
           // Format phone number before storing
-          const providedPhone = formatPhoneNumber(parts[6].trim());
+          const providedPhone = formatKenyanPhoneNumber(parts[6].trim());
           userData.phoneNumber = providedPhone;
           logger.info(`Using provided phone number: ${userData.phoneNumber}`);
         }
