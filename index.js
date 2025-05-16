@@ -63,7 +63,7 @@ if (require.main === module) {
   
   // Set up conversation cleanup (run every 15 minutes, expire after 30 minutes)
   setupPeriodicCleanup(userConversations);
-
+  
   // Start the server
   app.listen(PORT, () => {
     console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);

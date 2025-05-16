@@ -41,7 +41,7 @@ const validateAdvantaWebhook = (req) => {
 
     // The conversational flow will handle the validation of the actual user data
     // We're just validating the Advanta webhook format here
-    
+
     return {
       isValid: true
     };

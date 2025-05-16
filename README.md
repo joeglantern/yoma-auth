@@ -136,8 +136,8 @@ The service implements a simple, one-step flow to collect user information:
 
 4. **First Login**:
    - When the user first logs in to Yoma:
-     - They will receive an OTP via SMS to verify their phone number
-     - They will be prompted to create a new password
+   - They will receive an OTP via SMS to verify their phone number
+   - They will be prompted to create a new password
 
 For more details on the user experience, refer to the [User Guide](USER_GUIDE.md).
 

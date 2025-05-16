@@ -240,7 +240,7 @@ describe('Webhook Endpoint', () => {
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(false);
     expect(response.body.message).toBe('Invalid gender option');
-    
+
     // Check that error SMS was sent
     expect(axios.post).toHaveBeenCalledWith(
       'https://api.test.com/sms',

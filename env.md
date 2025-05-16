@@ -1,5 +1,31 @@
 # Advanta Integration Credentials
 
+## Webhook Authentication
+- `ADVANTA_WEBHOOK_TOKEN`: Token for authenticating webhook requests from Advanta
+  - Value: xS4tFJmsHJFyFGb5XQYj1KFol4CIw9jemRRBazHregA=
+
+## SMS API Credentials
+- `ADVANTA_SMS_API_URL`: The URL for Advanta's SMS API
+  - Value: https://api.advantasms.com/send
+- `ADVANTA_SMS_API_KEY`: Your API key for Advanta SMS
+  - Value: [Get this from Advanta]
+- `ADVANTA_PARTNER_ID`: Your Partner ID from Advanta
+  - Value: [Get this from Advanta]
+- `ADVANTA_SHORTCODE`: Your assigned shortcode
+  - Value: [Get this from Advanta]
+
+## Yoma API Credentials
+- `YOMA_API_URL`: The URL for Yoma's API
+  - Value: https://staging.yoma.world/api/v1
+- `YOMA_API_KEY`: Your API key for Yoma
+  - Value: [Your Yoma API key]
+
+## Server Configuration
+- `PORT`: The port number for the server
+  - Value: 3000
+- `NODE_ENV`: The environment (development, production)
+  - Value: production
+
 ## Production Environment
 
 ### Webhook Endpoint

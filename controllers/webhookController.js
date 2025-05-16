@@ -4,8 +4,8 @@
 
 const logger = require('../utils/logger');
 const { createUser, getReferenceData } = require('../services/yomaService');
-const { formatKenyanPhoneNumber } = require('../utils/phoneFormatter');
-const axios = require('axios');
+const { formatPhoneNumber } = require('../utils/phoneFormatter');
+const { sendSMS } = require('../services/advantaSMSService');
 
 // Store conversation state for users
 const userConversations = new Map();
@@ -24,15 +24,7 @@ async function sendResponseMessage(mobile, message) {
     }
 
     // Send message using Advanta SMS API
-    await axios.post(
-      process.env.ADVANTA_SMS_API_URL,
-      {
-        apiKey: process.env.ADVANTA_SMS_API_KEY,
-        phoneNumber: mobile,
-        message: message,
-        senderId: process.env.ADVANTA_SENDER_ID || 'YOMA'
-      }
-    );
+    await sendSMS(mobile, message);
     
     logger.info(`Response message sent to ${mobile}`);
   } catch (error) {
@@ -47,16 +39,43 @@ async function sendResponseMessage(mobile, message) {
  */
 const processWebhook = async (req, res) => {
   try {
-    // Extract data from Advanta's format
-    const { shortcode, mobile: rawMobile, message } = req.body;
+    const { shortcode, mobile, message } = req.body;
     
-    // Format the sender's phone number
-    const mobile = formatKenyanPhoneNumber(rawMobile);
+    // Validate required fields
+    if (!shortcode || !mobile || !message) {
+      logger.error('Missing required fields', { body: req.body });
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing required fields' 
+      });
+    }
+
+    // Format phone number
+    const formattedPhone = formatPhoneNumber(mobile);
     
-    logger.info('Received webhook data:', { shortcode, mobile, rawMobile, message });
+    // Get reference data
+    const referenceData = await getReferenceData();
+    
+    // Check if this is a new user
+    if (message.toLowerCase() === 'start' || message.toLowerCase() === 'hi') {
+      const welcomeMessage = `Welcome to Yoma! To register, send your details in this format:
+Name, Age, Gender, Education Level
+Example: John Doe, 25, Male, University
+
+Available options:
+Gender: ${referenceData.gender.map(g => g.name).join(', ')}
+Education: ${referenceData.education.map(e => e.name).join(', ')}`;
+
+      await sendSMS(formattedPhone, welcomeMessage);
+      
+      return res.json({ 
+        success: true, 
+        message: 'Welcome message sent' 
+      });
+    }
 
     // Check if this is a new conversation or restart
-    if (!userConversations.has(mobile) || message.toLowerCase().trim() === 'restart') {
+    if (!userConversations.has(formattedPhone) || message.toLowerCase().trim() === 'restart') {
       try {
         // Fetch education and gender options from Yoma
         logger.info('Fetching education and gender options for new conversation');
@@ -81,7 +100,7 @@ const processWebhook = async (req, res) => {
         });
         
         // Store options in conversation state for later validation
-        userConversations.set(mobile, { 
+        userConversations.set(formattedPhone, { 
           state: 'awaiting_all_info',
           timestamp: Date.now(),
           educationOptions,
@@ -89,7 +108,7 @@ const processWebhook = async (req, res) => {
         });
         
         // Send instructions to user
-        await sendResponseMessage(mobile, instructionsMessage);
+        await sendResponseMessage(formattedPhone, instructionsMessage);
         
         // Respond to Advanta that we're handling it
         return res.status(200).json({
@@ -107,14 +126,14 @@ const processWebhook = async (req, res) => {
           "Note: phoneNumber is optional. If provided, it will be used for account registration; otherwise, no phone number will be associated with the account.";
           
         // Store in conversation state
-        userConversations.set(mobile, { 
+        userConversations.set(formattedPhone, { 
           state: 'awaiting_all_info',
           timestamp: Date.now(),
           useFallback: true
         });
         
         // Send fallback instructions
-        await sendResponseMessage(mobile, fallbackInstructions);
+        await sendResponseMessage(formattedPhone, fallbackInstructions);
         
         return res.status(200).json({
           success: true,
@@ -124,7 +143,7 @@ const processWebhook = async (req, res) => {
     }
 
     // Get the current conversation state
-    const conversation = userConversations.get(mobile);
+    const conversation = userConversations.get(formattedPhone);
     
     // Handle the complete info submission
     if (conversation.state === 'awaiting_all_info') {
@@ -134,7 +153,7 @@ const processWebhook = async (req, res) => {
       // Check if we're using fallback mode (no education/gender IDs)
       if (conversation.useFallback && parts.length < 6) {
         // Not enough information provided
-        await sendResponseMessage(mobile, 
+        await sendResponseMessage(formattedPhone, 
           "Information incomplete. Please provide all required fields:\n" +
           "firstName,surname,email,displayName,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2[,phoneNumber]"
         );
@@ -145,7 +164,7 @@ const processWebhook = async (req, res) => {
         });
       } else if (!conversation.useFallback && parts.length < 8) {
         // Not enough information provided for full mode
-        await sendResponseMessage(mobile, 
+        await sendResponseMessage(formattedPhone, 
           "Information incomplete. Please provide all required fields:\n" +
           "firstName,surname,email,displayName,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2,education,gender[,phoneNumber]"
         );
@@ -177,7 +196,7 @@ const processWebhook = async (req, res) => {
         // Check if a custom phone number was provided (9th element if present)
         if (parts.length >= 9 && parts[8] && parts[8].trim()) {
           // Format phone number before storing
-          const providedPhone = formatKenyanPhoneNumber(parts[8].trim());
+          const providedPhone = formatPhoneNumber(parts[8].trim());
           userData.phoneNumber = providedPhone;
           logger.info(`Using provided phone number: ${userData.phoneNumber}`);
         }
@@ -188,7 +207,7 @@ const processWebhook = async (req, res) => {
         );
         
         if (!educationOption) {
-          await sendResponseMessage(mobile, 
+          await sendResponseMessage(formattedPhone, 
             "Invalid education option. Please use one of the available options exactly as provided."
           );
           
@@ -204,7 +223,7 @@ const processWebhook = async (req, res) => {
         );
         
         if (!genderOption) {
-          await sendResponseMessage(mobile, 
+          await sendResponseMessage(formattedPhone, 
             "Invalid gender option. Please use one of the available options exactly as provided."
           );
           
@@ -221,7 +240,7 @@ const processWebhook = async (req, res) => {
         // Check if a custom phone number was provided (7th element if present)
         if (parts.length >= 7 && parts[6] && parts[6].trim()) {
           // Format phone number before storing
-          const providedPhone = formatKenyanPhoneNumber(parts[6].trim());
+          const providedPhone = formatPhoneNumber(parts[6].trim());
           userData.phoneNumber = providedPhone;
           logger.info(`Using provided phone number: ${userData.phoneNumber}`);
         }
@@ -244,13 +263,13 @@ const processWebhook = async (req, res) => {
         logger.info('User created in Yoma:', yomaResponse);
         
         // Send success message to user
-        await sendResponseMessage(mobile, 
+        await sendResponseMessage(formattedPhone, 
           "Thank you! Your account has been created successfully. " +
           "You will receive a verification message for your first login to Yoma."
         );
         
         // Clear the conversation state
-        userConversations.delete(mobile);
+        userConversations.delete(formattedPhone);
         
         // Return success response
     return res.status(200).json({
@@ -267,13 +286,13 @@ const processWebhook = async (req, res) => {
         logger.error('Error creating user in Yoma:', error.response?.data || error.message);
         
         // Send error message to user
-        await sendResponseMessage(mobile, 
+        await sendResponseMessage(formattedPhone, 
           "Sorry, we couldn't create your account. " + 
           "Please try again or contact support."
         );
         
         // Clear the conversation state
-        userConversations.delete(mobile);
+        userConversations.delete(formattedPhone);
         
         // Return error response
         return res.status(500).json({
