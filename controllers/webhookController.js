@@ -6,6 +6,7 @@ const logger = require('../utils/logger');
 const { createUser, getReferenceData } = require('../services/yomaService');
 const { formatKenyanPhoneNumber } = require('../utils/phoneFormatter');
 const { sendSMS } = require('../services/advantaSMSService');
+const onboardingService = require('../services/onboardingService');
 
 // Store conversation state for users
 const userConversations = new Map();
@@ -281,10 +282,12 @@ const processWebhook = async (req, res) => {
         const yomaResponse = await createUser(userData);
         logger.info('User created in Yoma:', yomaResponse);
         
+        // Record the onboarded user with Yoma response data
+        await onboardingService.recordOnboardedUser(yomaResponse);
+        
         // Send success message to user
         await sendResponseMessage(formattedPhone, 
-          "Congratulations! You are now onboarded on Yoma.\n" +
-          "Check your email to set your password."
+          "Registration successful! Welcome to Yoma. You can now log in to your account."
         );
         
         // Clear the conversation state
@@ -306,6 +309,16 @@ const processWebhook = async (req, res) => {
           logger.error('Error creating user in Yoma:', error.response.data);
         } else {
           logger.error('Error creating user:', error.message || error);
+        }
+        // Check if user already exists
+        if (error.response?.data?.message?.includes('already exists')) {
+          await sendResponseMessage(formattedPhone,
+            "This email or phone number is already registered. Please use different credentials."
+          );
+          return res.status(200).json({
+            success: false,
+            message: 'User already exists'
+          });
         }
         // Send error message to user
         await sendResponseMessage(formattedPhone,
