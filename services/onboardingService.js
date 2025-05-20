@@ -20,6 +20,9 @@ async function recordOnboardedUser(userData) {
       throw new Error('Missing required fields for onboarded user');
     }
 
+    // Log the userData to debug country code issues
+    logger.info('Recording user with data:', JSON.stringify(userData));
+
     const { data, error } = await supabase
       .from('onboarded_users')
       .insert({
@@ -29,7 +32,8 @@ async function recordOnboardedUser(userData) {
         email: userData.email,
         display_name: userData.displayName,
         phone_number: userData.phoneNumber || null,
-        country_code: userData.countryCodeAlpha2,
+        // Use countryId if available (from Yoma API response), otherwise use countryCodeAlpha2
+        country_code: userData.countryId || userData.countryCodeAlpha2,
         education_id: userData.educationId || null,
         gender_id: userData.genderId || null,
         date_of_birth: userData.dateOfBirth
