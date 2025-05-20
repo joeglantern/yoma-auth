@@ -128,31 +128,6 @@ async function getReferenceData(type) {
     // Get auth token
     const authToken = await getAuthToken();
     
-    // For development mode with mock token, return mock reference data
-    if (process.env.NODE_ENV !== 'production' && authToken === 'mock-token-for-development') {
-      console.log(`Using mock ${type} data for development`);
-      
-      // Mock data for education
-      if (type === 'education') {
-        return [
-          { id: '1', name: 'Primary School' },
-          { id: '2', name: 'Secondary School' },
-          { id: '3', name: 'College/University' }
-        ];
-      }
-      
-      // Mock data for gender
-      if (type === 'gender') {
-        return [
-          { id: '1', name: 'Male' },
-          { id: '2', name: 'Female' },
-          { id: '3', name: 'Other' }
-        ];
-      }
-      
-      return [];
-    }
-    
     // Use the correct endpoint path based on B2B documentation
     const endpoint = `${API_URL}/lookup/${type}`;
     
@@ -167,6 +142,9 @@ async function getReferenceData(type) {
         }
       }
     );
+
+    // Log the response data for debugging
+    console.log(`Received ${type} data:`, response.data);
 
     return response.data;
   } catch (error) {

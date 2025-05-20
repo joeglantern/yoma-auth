@@ -58,20 +58,46 @@ const processWebhook = async (req, res) => {
     
     // Check if this is a new user
     if (message.toLowerCase() === 'start' || message.toLowerCase() === 'hi') {
-      const welcomeMessage = `Welcome to Yoma! To register, send your details in this format:
-Name, Age, Gender, Education Level
-Example: John Doe, 25, Male, University
-
-Available options:
-Gender: ${referenceData.gender.map(g => g.name).join(', ')}
-Education: ${referenceData.education.map(e => e.name).join(', ')}`;
-
-      await sendSMS(formattedPhone, welcomeMessage);
-      
-      return res.json({ 
-        success: true, 
-        message: 'Welcome message sent' 
-      });
+      try {
+        // Fetch education and gender options from Yoma
+        logger.info('Fetching education and gender options for new conversation');
+        const educationOptions = await getReferenceData('education');
+        const genderOptions = await getReferenceData('gender');
+        
+        // Build instructions including all options
+        let instructionsMessage = "Welcome to Yoma Kenya! Please provide your information in the following format:\n" +
+          "firstName,surname,email,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2,education,gender[,phoneNumber]\n\n" +
+          "Example: John,Doe,john.doe@example.com,2003-08-03,KE,College/University,Male\n\n" +
+          "Available Education Options (use the exact name):\n";
+          
+        educationOptions.forEach((option) => {
+          instructionsMessage += `${option.name}\n`;
+        });
+        
+        instructionsMessage += "\nAvailable Gender Options (use the exact name):\n";
+        genderOptions.forEach((option) => {
+          instructionsMessage += `${option.name}\n`;
+        });
+        
+        // Store options in conversation state for later validation
+        userConversations.set(formattedPhone, { 
+          state: 'awaiting_all_info',
+          timestamp: Date.now(),
+          educationOptions,
+          genderOptions
+        });
+        
+        // Send instructions to user
+        await sendResponseMessage(formattedPhone, instructionsMessage);
+        
+        return res.json({ success: true, message: 'Welcome message sent' });
+      } catch (error) {
+        logger.error('Error fetching options:', error);
+        return res.status(500).json({ 
+          success: false, 
+          error: 'Failed to fetch education and gender options' 
+        });
+      }
     }
 
     // Check if this is a new conversation or restart
@@ -145,23 +171,30 @@ Education: ${referenceData.education.map(e => e.name).join(', ')}`;
       
       // Check if we're using fallback mode (no education/gender IDs)
       if (conversation.useFallback && parts.length < 6) {
-        // Not enough information provided
-        await sendResponseMessage(formattedPhone, 
-          "Information incomplete. Please provide all required fields:\n" +
-          "firstName,surname,email,displayName,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2[,phoneNumber]"
-        );
-        
+        // Resend fallback instructions
+        let fallbackInstructions =
+          "Information incomplete. Please provide all required fields in the following format:\n" +
+          "firstName,surname,email,displayName,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2[,phoneNumber]\n" +
+          "Example: Liban,Joe,Libanjoe7@gmail.com,Liban Joe,2003-08-03,KE";
+        await sendResponseMessage(formattedPhone, fallbackInstructions);
         return res.status(200).json({
           success: true,
           message: 'Requested more information from user (fallback mode)'
         });
-      } else if (!conversation.useFallback && parts.length < 8) {
-        // Not enough information provided for full mode
-        await sendResponseMessage(formattedPhone, 
-          "Information incomplete. Please provide all required fields:\n" +
-          "firstName,surname,email,displayName,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2,education,gender[,phoneNumber]"
-        );
-        
+      } else if (!conversation.useFallback && parts.length < 7) {
+        // Resend full instructions with options
+        let instructionsMessage = "Information incomplete. Please provide all required fields in the following format:\n" +
+          "firstName,surname,email,displayName,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2,education,gender[,phoneNumber]\n\n" +
+          "Example: John,Doe,john.doe@example.com,John Doe,2003-08-03,KE,Secondary,Male\n\n" +
+          "Available Education Options (use the exact name):\n";
+        conversation.educationOptions.forEach((option) => {
+          instructionsMessage += `${option.name}\n`;
+        });
+        instructionsMessage += "\nAvailable Gender Options (use the exact name):\n";
+        conversation.genderOptions.forEach((option) => {
+          instructionsMessage += `${option.name}\n`;
+        });
+        await sendResponseMessage(formattedPhone, instructionsMessage);
         return res.status(200).json({
           success: true,
           message: 'Requested more information from user'
@@ -169,81 +202,75 @@ Education: ${referenceData.education.map(e => e.name).join(', ')}`;
       }
       
       // Extract basic information
-      const [firstName, surname, email, dateOfBirth, countryCodeAlpha2] = parts;
+      const [firstName, surname, email, displayName, dateOfBirth, countryCodeAlpha2, educationName, genderName, phoneNumber] = parts;
       
       // Build user data object
       const userData = {
         firstName,
         surname,
         email,
+        displayName: displayName || `${firstName} ${surname}`,
         dateOfBirth,
         countryCodeAlpha2
       };
       
+      // Log the options stored for this user
+      logger.info('Education options for user:', JSON.stringify(conversation.educationOptions));
+      logger.info('Gender options for user:', JSON.stringify(conversation.genderOptions));
+      logger.info('User input for educationName:', educationName);
+      logger.info('User input for genderName:', genderName);
+      
       // Handle education and gender IDs if not in fallback mode
       if (!conversation.useFallback) {
-        const educationName = parts[5];
-        const genderName = parts[6];
-        
-        // Check if a custom phone number was provided (7th element if present)
-        if (parts.length >= 7 && parts[6] && parts[6].trim()) {
-          // Format phone number before storing
-          const providedPhone = formatKenyanPhoneNumber(parts[6].trim());
-          userData.phoneNumber = providedPhone;
-          logger.info(`Using provided phone number: ${userData.phoneNumber}`);
-        }
-        
         // Find education ID by name
         const educationOption = conversation.educationOptions.find(
           option => option.name.toLowerCase() === educationName.toLowerCase()
         );
-        
         if (!educationOption) {
+          const availableOptions = conversation.educationOptions.map(opt => opt.name).join('\n');
           await sendResponseMessage(formattedPhone, 
-            "Invalid education option. Please use one of the available options exactly as provided."
+            "Invalid education option. Please use one of these exact options:\n" + availableOptions
           );
-          
           return res.status(200).json({
             success: false,
             message: 'Invalid education option'
           });
         }
-        
         // Find gender ID by name
         const genderOption = conversation.genderOptions.find(
           option => option.name.toLowerCase() === genderName.toLowerCase()
         );
-        
         if (!genderOption) {
+          const availableOptions = conversation.genderOptions.map(opt => opt.name).join('\n');
           await sendResponseMessage(formattedPhone, 
-            "Invalid gender option. Please use one of the available options exactly as provided."
+            "Invalid gender option. Please use one of these exact options:\n" + availableOptions
           );
-          
           return res.status(200).json({
             success: false,
             message: 'Invalid gender option'
           });
         }
-        
         // Add validated IDs to user data
         userData.educationId = educationOption.id;
         userData.genderId = genderOption.id;
+        logger.info('Using education ID:', educationOption.id, 'and gender ID:', genderOption.id);
+        
+        // If phone number is provided (8th field), use it
+        if (phoneNumber && phoneNumber.trim()) {
+          const providedPhone = formatKenyanPhoneNumber(phoneNumber.trim());
+          userData.phoneNumber = providedPhone;
+          logger.info(`Using provided phone number: ${userData.phoneNumber}`);
+        }
       } else {
+        // In fallback mode, we don't use education or gender IDs
+        logger.info('Using fallback mode - no education or gender IDs will be sent');
+        
         // Check if a custom phone number was provided (5th element if present)
         if (parts.length >= 5 && parts[4] && parts[4].trim()) {
           // Format phone number before storing
           const providedPhone = formatKenyanPhoneNumber(parts[4].trim());
           userData.phoneNumber = providedPhone;
           logger.info(`Using provided phone number: ${userData.phoneNumber}`);
-        }
-        
-        // In fallback mode, use default IDs if available
-        if (process.env.DEFAULT_EDUCATION_ID) {
-          userData.educationId = process.env.DEFAULT_EDUCATION_ID;
-        }
-        
-        if (process.env.DEFAULT_GENDER_ID) {
-          userData.genderId = process.env.DEFAULT_GENDER_ID;
         }
       }
       
@@ -274,22 +301,19 @@ Education: ${referenceData.education.map(e => e.name).join(', ')}`;
           }
         });
       } catch (error) {
-        // Log error details
-        logger.error('Error creating user in Yoma:', error.response?.data || error.message);
-        
+        // Log error details with full Yoma API response if available
+        if (error.response && error.response.data) {
+          logger.error('Error creating user in Yoma:', error.response.data);
+        } else {
+          logger.error('Error creating user:', error.message || error);
+        }
         // Send error message to user
-        await sendResponseMessage(formattedPhone, 
-          "Sorry, we couldn't create your account. " + 
-          "Please try again or contact support."
+        await sendResponseMessage(formattedPhone,
+          "Sorry, there was an error creating your account. Please try again later."
         );
-        
-        // Clear the conversation state
-        userConversations.delete(formattedPhone);
-        
-        // Return error response
         return res.status(500).json({
           success: false,
-          message: 'Error creating user in Yoma',
+          message: 'Error creating user',
           error: error.response?.data || error.message
         });
       }
