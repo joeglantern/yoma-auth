@@ -14,6 +14,12 @@ const supabase = createClient(
  */
 async function recordOnboardedUser(userData) {
   try {
+    // Validate required fields
+    if (!userData.id || !userData.firstName || !userData.surname || !userData.email) {
+      logger.error('Missing required fields for onboarded user:', userData);
+      throw new Error('Missing required fields for onboarded user');
+    }
+
     const { data, error } = await supabase
       .from('onboarded_users')
       .insert({

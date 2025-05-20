@@ -282,7 +282,12 @@ const processWebhook = async (req, res) => {
         const yomaResponse = await createUser(userData);
         logger.info('User created in Yoma:', yomaResponse);
         
-        // Record the onboarded user with Yoma response data
+        // Validate Yoma response before saving to Supabase
+        if (!yomaResponse || !yomaResponse.id) {
+          throw new Error('Invalid response from Yoma API');
+        }
+
+        // Only save to Supabase if Yoma registration was successful
         await onboardingService.recordOnboardedUser(yomaResponse);
         
         // Send success message to user
