@@ -27,8 +27,11 @@ async function sendSMS(phoneNumber, message) {
             message: message
         });
 
+        // Log the full response for debugging
+        logger.info('SMS API Response:', response.data);
+
         // Extract messageId from the nested response
-        const messageId = response.data.responses?.[0]?.messageid;
+        const messageId = response.data.responses?.[0]?.messageid || 'No messageId received';
 
         logger.info('SMS sent successfully', {
             phoneNumber,
