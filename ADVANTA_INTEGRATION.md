@@ -53,3 +53,8 @@ For integration issues, contact:
 - Email: Libanjoe7@gmail.com
 - Phone: +254758009278
  
+ start message;
+curl -X POST 'http://localhost:3000/advanta-webhook' -H 'Content-Type: application/json' -H 'x-advanta-token: xS4tFJmsHJFyFGb5XQYj1KFol4CIw9jemRRBazHregA=' -d '{"shortcode": "22317", "mobile": "254758009278", "message": "hi"}' | cat
+
+register;
+curl -X POST 'http://localhost:3000/advanta-webhook' -H 'Content-Type: application/json' -H 'x-advanta-token: xS4tFJmsHJFyFGb5XQYj1KFol4CIw9jemRRBazHregA=' -d '{"shortcode": "22317", "mobile": "254758009278", "message": "Liban,Joe,mcisco857@gmail.com,Liban Joe,2003-08-03,KE,Tertiary,Male"}' | cat

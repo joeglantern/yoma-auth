@@ -67,8 +67,9 @@ const processWebhook = async (req, res) => {
         
         // Build instructions including all options
         let instructionsMessage = "Welcome to Yoma Kenya! Please provide your information in the following format:\n" +
-          "firstName,surname,email,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2,education,gender[,phoneNumber]\n\n" +
-          "Example: John,Doe,john.doe@example.com,2003-08-03,KE,College/University,Male\n\n" +
+          "firstName,surname,email,displayName,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2,education,gender[,phoneNumber]\n\n" +
+          "Example: John,Doe,john.doe@example.com,John Doe,2003-08-03,KE,College/University,Male\n\n" +
+          "Note: For displayName, you can leave it empty by using two commas (,,) and we'll use your first and last name.\n\n" +
           "Available Education Options (use the exact name):\n";
           
         educationOptions.forEach((option) => {
@@ -111,8 +112,8 @@ const processWebhook = async (req, res) => {
         
         // Build instructions including all options
         let instructionsMessage = "Welcome to Yoma Kenya! Please provide your information in the following format:\n" +
-          "firstName,surname,email,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2,education,gender[,phoneNumber]\n\n" +
-          "Example: John,Doe,john.doe@example.com,2003-08-03,KE,Secondary,Male\n\n" +
+          "firstName,surname,email,Username,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2,education,gender[,phoneNumber]\n\n" +
+          "Example: John,Doe,john.doe@example.com,John Doe,2003-08-03,KE,Secondary,Male\n\n" +
           "Available Education Options (use the exact name):\n";
           
         educationOptions.forEach((option) => {
@@ -143,7 +144,7 @@ const processWebhook = async (req, res) => {
           "Welcome to Yoma! Please provide your information in the following format:\n" +
           "firstName,surname,email,displayName,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2[,phoneNumber]\n\n" +
           "Example: Liban,Joe,Libanjoe7@gmail.com,Liban Joe,2003-08-03,KE\n\n" +
-          "Note: phoneNumber is optional. If provided, it will be used for account registration; otherwise, no phone number will be associated with the account.";
+          "Note: displayName can be left empty by using two commas (,,). phoneNumber is optional. If provided, it will be used for account registration; otherwise, no phone number will be associated with the account.";
           
         // Store in conversation state
         userConversations.set(formattedPhone, { 
@@ -187,6 +188,7 @@ const processWebhook = async (req, res) => {
         let instructionsMessage = "Information incomplete. Please provide all required fields in the following format:\n" +
           "firstName,surname,email,displayName,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2,education,gender[,phoneNumber]\n\n" +
           "Example: John,Doe,john.doe@example.com,John Doe,2003-08-03,KE,Secondary,Male\n\n" +
+          "Note: For displayName, you can leave it empty by using two commas (,,) and we'll use your first and last name.\n\n" +
           "Available Education Options (use the exact name):\n";
         conversation.educationOptions.forEach((option) => {
           instructionsMessage += `${option.name}\n`;
@@ -210,7 +212,7 @@ const processWebhook = async (req, res) => {
         firstName,
         surname,
         email,
-        displayName: displayName || `${firstName} ${surname}`,
+        displayName: (displayName && displayName.trim()) ? displayName : `${firstName} ${surname}`,
         dateOfBirth,
         countryCodeAlpha2
       };
