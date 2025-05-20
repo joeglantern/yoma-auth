@@ -84,8 +84,8 @@ Education: ${referenceData.education.map(e => e.name).join(', ')}`;
         
         // Build instructions including all options
         let instructionsMessage = "Welcome to Yoma! Please provide your information in the following format:\n" +
-          "firstName,surname,email,displayName,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2,education,gender[,phoneNumber]\n\n" +
-          "Example: Liban,Joe,Libanjoe7@gmail.com,Liban Joe,2003-08-03,KE,Secondary,Male\n\n" +
+          "firstName,surname,email,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2,education,gender[,phoneNumber]\n\n" +
+          "Example: Liban,Joe,Libanjoe7@gmail.com,2003-08-03,KE,Secondary,Male\n\n" +
           "Note: phoneNumber is optional. If provided, it will be used for account registration; otherwise, no phone number will be associated with the account.\n\n" +
           "Available Education Options (use the exact name):\n";
           
@@ -176,27 +176,26 @@ Education: ${referenceData.education.map(e => e.name).join(', ')}`;
       }
       
       // Extract basic information
-      const [firstName, surname, email, displayName, dateOfBirth, countryCodeAlpha2] = parts;
+      const [firstName, surname, email, dateOfBirth, countryCodeAlpha2] = parts;
       
       // Build user data object
       const userData = {
         firstName,
         surname,
         email,
-        displayName,
         dateOfBirth,
         countryCodeAlpha2
       };
       
       // Handle education and gender IDs if not in fallback mode
       if (!conversation.useFallback) {
-        const educationName = parts[6];
-        const genderName = parts[7];
+        const educationName = parts[5];
+        const genderName = parts[6];
         
-        // Check if a custom phone number was provided (9th element if present)
-        if (parts.length >= 9 && parts[8] && parts[8].trim()) {
+        // Check if a custom phone number was provided (7th element if present)
+        if (parts.length >= 7 && parts[6] && parts[6].trim()) {
           // Format phone number before storing
-          const providedPhone = formatKenyanPhoneNumber(parts[8].trim());
+          const providedPhone = formatKenyanPhoneNumber(parts[6].trim());
           userData.phoneNumber = providedPhone;
           logger.info(`Using provided phone number: ${userData.phoneNumber}`);
         }
@@ -237,10 +236,10 @@ Education: ${referenceData.education.map(e => e.name).join(', ')}`;
         userData.educationId = educationOption.id;
         userData.genderId = genderOption.id;
       } else {
-        // Check if a custom phone number was provided (7th element if present)
-        if (parts.length >= 7 && parts[6] && parts[6].trim()) {
+        // Check if a custom phone number was provided (5th element if present)
+        if (parts.length >= 5 && parts[4] && parts[4].trim()) {
           // Format phone number before storing
-          const providedPhone = formatKenyanPhoneNumber(parts[6].trim());
+          const providedPhone = formatKenyanPhoneNumber(parts[4].trim());
           userData.phoneNumber = providedPhone;
           logger.info(`Using provided phone number: ${userData.phoneNumber}`);
         }

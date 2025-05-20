@@ -27,9 +27,13 @@ async function sendSMS(phoneNumber, message) {
             message: message
         });
 
+        // Extract messageId from the nested response
+        const messageId = response.data.responses?.[0]?.messageid;
+
         logger.info('SMS sent successfully', {
             phoneNumber,
-            messageId: response.data.messageId
+            messageId,
+            response: response.data
         });
 
         return response.data;
