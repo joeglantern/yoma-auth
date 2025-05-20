@@ -83,19 +83,12 @@ Education: ${referenceData.education.map(e => e.name).join(', ')}`;
         const genderOptions = await getReferenceData('gender');
         
         // Build instructions including all options
-        let instructionsMessage = "Welcome to Yoma! Please provide your information in the following format:\n" +
+        let instructionsMessage = "Welcome to Yoma Kenya! Please provide your information in the following format:\n" +
           "firstName,surname,email,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2,education,gender[,phoneNumber]\n\n" +
-          "Example: Liban,Joe,Libanjoe7@gmail.com,2003-08-03,KE,Secondary,Male\n\n" +
-          "Note: phoneNumber is optional. If provided, it will be used for account registration; otherwise, no phone number will be associated with the account.\n\n" +
+          "Example: John,Doe,john.doe@example.com,2003-08-03,KE,Secondary,Male\n\n" +
           "Available Education Options (use the exact name):\n";
           
         educationOptions.forEach((option) => {
-          instructionsMessage += `${option.name}\n`;
-        });
-        
-        instructionsMessage += "\nAvailable Gender Options (use the exact name):\n";
-        
-        genderOptions.forEach((option) => {
           instructionsMessage += `${option.name}\n`;
         });
         
@@ -263,8 +256,8 @@ Education: ${referenceData.education.map(e => e.name).join(', ')}`;
         
         // Send success message to user
         await sendResponseMessage(formattedPhone, 
-          "Thank you! Your account has been created successfully. " +
-          "You will receive a verification message for your first login to Yoma."
+          "Congratulations! You are now onboarded on Yoma.\n" +
+          "Check your email to set your password."
         );
         
         // Clear the conversation state
