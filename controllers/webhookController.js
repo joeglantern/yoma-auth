@@ -113,7 +113,7 @@ const processWebhook = async (req, res) => {
         // Build instructions including all options
         let instructionsMessage = "Welcome to Yoma Kenya! Please provide your information in the following format:\n" +
           "firstName,surname,email,Username,dateOfBirth(YYYY-MM-DD),countryCodeAlpha2,education,gender\n\n" +
-          "Example: John,Doe,john.doe@example.com,John Doe,2003-08-03,KE,Secondary,Male\n\n" +
+          "Example: John,Doe,john@example.com,John Doe,2003-08-03,KE,Secondary,Male\n\n" +
           "Available Education Options (use the exact name):\n";
           
         educationOptions.forEach((option) => {
