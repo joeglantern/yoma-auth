@@ -11,7 +11,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.post('/sms/webhook', handleSmsWebhook);
+app.all('/sms/webhook', handleSmsWebhook);
 
 // Error handling
 app.use(errorHandler);
