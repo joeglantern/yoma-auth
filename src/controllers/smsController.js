@@ -1,6 +1,6 @@
-const cache = require('memory-cache');
 const { sendSms } = require('../services/advantaSmsService');
-const { getGenderId, getEducationId, registerUser, genderMap, educationMap } = require('../services/yomaService');
+const { getGenderId, getEducationId, registerUser } = require('../services/yomaService');
+const { STATES, getSession, saveSession, clearSession } = require('../services/sessionService');
 
 // Normalize phone number to international format
 const normalizePhoneNumber = (phone) => {
@@ -65,41 +65,6 @@ const normalizeEducation = (input) => {
   };
   
   return educationMap[normalized] || normalized;
-};
-
-// Cache keys
-const SESSION_CACHE_KEY = 'sms_sessions';
-
-// Session states
-const STATES = {
-  FIRST_NAME: 'first_name',
-  SURNAME: 'surname',
-  GENDER: 'gender',
-  EDUCATION: 'education',
-  COMPLETE: 'complete'
-};
-
-// Get user session
-const getSession = (phoneNumber) => {
-  const sessions = cache.get(SESSION_CACHE_KEY) || {};
-  console.log('Current session for', phoneNumber, ':', sessions[phoneNumber]);
-  return sessions[phoneNumber];
-};
-
-// Save user session
-const saveSession = (phoneNumber, sessionData) => {
-  const sessions = cache.get(SESSION_CACHE_KEY) || {};
-  sessions[phoneNumber] = sessionData;
-  cache.put(SESSION_CACHE_KEY, sessions);
-  console.log('Saved session for', phoneNumber, ':', sessionData);
-};
-
-// Clear user session
-const clearSession = (phoneNumber) => {
-  const sessions = cache.get(SESSION_CACHE_KEY) || {};
-  delete sessions[phoneNumber];
-  cache.put(SESSION_CACHE_KEY, sessions);
-  console.log('Cleared session for', phoneNumber);
 };
 
 const handleSmsWebhook = async (req, res) => {
