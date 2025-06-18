@@ -8,6 +8,22 @@ const sendSms = async (phoneNumber, message) => {
       return true;
     }
 
+    // Validate required environment variables
+    const requiredEnvVars = {
+      ADVANTA_SMS_API_URL: process.env.ADVANTA_SMS_API_URL,
+      ADVANTA_SMS_API_KEY: process.env.ADVANTA_SMS_API_KEY,
+      ADVANTA_PARTNER_ID: process.env.ADVANTA_PARTNER_ID,
+      ADVANTA_SHORTCODE: process.env.ADVANTA_SHORTCODE
+    };
+
+    const missingVars = Object.entries(requiredEnvVars)
+      .filter(([_, value]) => !value)
+      .map(([key]) => key);
+
+    if (missingVars.length > 0) {
+      throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+    }
+
     const response = await axios.post(process.env.ADVANTA_SMS_API_URL, {
       apikey: process.env.ADVANTA_SMS_API_KEY,
       partnerID: process.env.ADVANTA_PARTNER_ID,
@@ -16,18 +32,24 @@ const sendSms = async (phoneNumber, message) => {
       mobile: phoneNumber
     });
 
+    console.log('Advanta SMS API response:', response.data);
+
     if (response.data.status !== 'success') {
-      throw new Error(`SMS sending failed: ${response.data.message}`);
+      throw new Error(`SMS sending failed: ${response.data.message || JSON.stringify(response.data)}`);
     }
 
     return true;
   } catch (error) {
-    console.error('Error sending SMS:', error);
+    console.error('Error sending SMS:', {
+      message: error.message,
+      response: error.response?.data,
+      config: error.config
+    });
     // Don't throw error during testing
     if (process.env.NODE_ENV === 'test') {
       return true;
     }
-    throw new Error('Failed to send SMS');
+    throw error; // Throw the original error to preserve the stack trace and details
   }
 };
 
