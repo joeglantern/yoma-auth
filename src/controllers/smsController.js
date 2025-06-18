@@ -109,7 +109,24 @@ const handleSmsWebhook = async (req, res) => {
       ADVANTA_SHORTCODE: process.env.ADVANTA_SHORTCODE
     });
     
-    const { phoneNumber: rawPhoneNumber, message } = req.body;
+    // Extract phone number and message from either our test format or Advanta's format
+    let rawPhoneNumber, message;
+    
+    if (req.body.phoneNumber && req.body.message) {
+      // Our test format
+      rawPhoneNumber = req.body.phoneNumber;
+      message = req.body.message;
+    } else if (req.body.mobile && req.body.message) {
+      // Advanta's likely format
+      rawPhoneNumber = req.body.mobile;
+      message = req.body.message;
+    } else if (req.body.from && req.body.text) {
+      // Another possible Advanta format
+      rawPhoneNumber = req.body.from;
+      message = req.body.text;
+    } else {
+      throw new Error('Invalid request format: Missing phone number or message');
+    }
     
     // Normalize phone number
     const phoneNumber = normalizePhoneNumber(rawPhoneNumber);
