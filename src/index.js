@@ -50,7 +50,7 @@ app.use((req, res, next) => {
 });
 
 // Shortcode webhook handler
-app.all('/webhook', async (req, res) => {
+app.all(['/webhook', '/advanta-webhook'], async (req, res) => {
   try {
     console.log('Processing shortcode message...');
     
@@ -99,10 +99,10 @@ app.all('/webhook', async (req, res) => {
 // Message processing function
 async function processMessage(data) {
   const phoneNumber = data.mobile || data.msisdn;
-  const message = data.message.trim().toLowerCase();
+  const message = data.message.trim().toUpperCase();
 
   // Simple response logic
-  if (message === 'start') {
+  if (message === 'START') {
     return "Welcome to Yoma! What's your first name?";
   }
   
