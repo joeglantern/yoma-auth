@@ -101,7 +101,15 @@ const clearSession = (phoneNumber) => {
 
 const handleSmsWebhook = async (req, res) => {
   try {
-    console.log('Received webhook request:', req.body);
+    // Log everything about the request
+    console.log('=== INCOMING SMS WEBHOOK REQUEST ===');
+    console.log('Headers:', req.headers);
+    console.log('Query params:', req.query);
+    console.log('Body:', req.body);
+    console.log('Method:', req.method);
+    console.log('URL:', req.url);
+    console.log('================================');
+
     console.log('Environment variables:', {
       NODE_ENV: process.env.NODE_ENV,
       ADVANTA_SMS_API_URL: process.env.ADVANTA_SMS_API_URL,
@@ -109,33 +117,50 @@ const handleSmsWebhook = async (req, res) => {
       ADVANTA_SHORTCODE: process.env.ADVANTA_SHORTCODE
     });
     
-    // Extract phone number and message based on Advanta's shortcode format
+    // Check if this is a GET request (Advanta might be using GET)
     let rawPhoneNumber, message;
     
-    if (req.body.msisdn && req.body.message) {
-      // Advanta's interactive shortcode format
-      rawPhoneNumber = req.body.msisdn;
-      message = req.body.message;
-    } else if (req.body.mobile && req.body.message) {
-      // Advanta's non-interactive shortcode format
-      rawPhoneNumber = req.body.mobile;
-      message = req.body.message;
-    } else if (req.body.phoneNumber && req.body.message) {
-      // Our test format (keeping for testing purposes)
-      rawPhoneNumber = req.body.phoneNumber;
-      message = req.body.message;
+    if (req.method === 'GET') {
+      // Handle GET request parameters
+      rawPhoneNumber = req.query.msisdn || req.query.mobile;
+      message = req.query.message;
+      console.log('Processing GET request with:', { rawPhoneNumber, message });
     } else {
-      throw new Error('Invalid request format: Missing phone number or message');
+      // Handle POST request body
+      if (req.body.msisdn && req.body.message) {
+        // Advanta's interactive shortcode format
+        rawPhoneNumber = req.body.msisdn;
+        message = req.body.message;
+      } else if (req.body.mobile && req.body.message) {
+        // Advanta's non-interactive shortcode format
+        rawPhoneNumber = req.body.mobile;
+        message = req.body.message;
+      } else if (req.body.phoneNumber && req.body.message) {
+        // Our test format (keeping for testing purposes)
+        rawPhoneNumber = req.body.phoneNumber;
+        message = req.body.message;
+      } else {
+        console.log('No matching format found in request body');
+        throw new Error('Invalid request format: Missing phone number or message');
+      }
     }
     
     // Log the shortcode and partnerId if present (for debugging)
-    if (req.body.shortcode) {
-      console.log('Received from shortcode:', req.body.shortcode);
+    const shortcode = req.method === 'GET' ? req.query.shortcode : req.body.shortcode;
+    const partnerId = req.method === 'GET' ? req.query.partnerId : req.body.partnerId;
+    
+    if (shortcode) {
+      console.log('Received from shortcode:', shortcode);
     }
-    if (req.body.partnerId) {
-      console.log('Partner ID:', req.body.partnerId);
+    if (partnerId) {
+      console.log('Partner ID:', partnerId);
     }
     
+    if (!rawPhoneNumber || !message) {
+      console.log('Missing required fields:', { rawPhoneNumber, message });
+      throw new Error('Missing required fields: phone number and message are required');
+    }
+
     // Normalize phone number
     const phoneNumber = normalizePhoneNumber(rawPhoneNumber);
     console.log('Normalized phone number:', phoneNumber);
