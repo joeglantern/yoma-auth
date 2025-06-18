@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const axios = require('axios');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -7,6 +8,30 @@ const PORT = process.env.PORT || 3000;
 // Basic middleware for parsing requests
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Function to send SMS via Advanta API
+async function sendSms(phoneNumber, message) {
+  try {
+    console.log('Sending SMS response via Advanta API:', {
+      to: phoneNumber,
+      message: message
+    });
+
+    const response = await axios.post(process.env.ADVANTA_SMS_API_URL, {
+      apikey: process.env.ADVANTA_SMS_API_KEY,
+      partnerID: process.env.ADVANTA_PARTNER_ID,
+      shortcode: process.env.ADVANTA_SHORTCODE,
+      mobile: phoneNumber.replace(/^\+/, ''), // Remove + if present
+      message: message
+    });
+
+    console.log('Advanta API response:', response.data);
+    return true;
+  } catch (error) {
+    console.error('Error sending SMS:', error.response?.data || error.message);
+    throw error;
+  }
+}
 
 // Simple logging middleware
 app.use((req, res, next) => {
@@ -50,12 +75,16 @@ app.all('/webhook', async (req, res) => {
     });
 
     // Process the message
-    const response = await processMessage(messageData);
+    const responseMessage = await processMessage(messageData);
 
-    // Send response back to Advanta (they will forward this to the user)
+    // Actively send the response via SMS
+    const phoneNumber = messageData.mobile || messageData.msisdn;
+    await sendSms(phoneNumber, responseMessage);
+
+    // Send success response to Advanta
     res.json({
       success: true,
-      message: response
+      message: 'Message processed and response sent'
     });
 
   } catch (error) {
@@ -86,4 +115,5 @@ app.listen(PORT, () => {
   console.log('Webhook URL:', `https://yoma-auth-le50.onrender.com/webhook`);
   console.log('Shortcode:', process.env.ADVANTA_SHORTCODE);
   console.log('Environment:', process.env.NODE_ENV);
+  console.log('Advanta API URL:', process.env.ADVANTA_SMS_API_URL);
 }); 
