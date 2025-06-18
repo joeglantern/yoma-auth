@@ -105,12 +105,27 @@ const handleSmsWebhook = async (req, res) => {
     console.log('\n=== INCOMING SMS WEBHOOK REQUEST ===');
     console.log('Timestamp:', new Date().toISOString());
     console.log('Content-Type:', req.headers['content-type']);
+    console.log('Authorization:', req.headers['authorization']);
     console.log('Headers:', JSON.stringify(req.headers, null, 2));
     console.log('Query params:', JSON.stringify(req.query, null, 2));
     console.log('Body:', JSON.stringify(req.body, null, 2));
     console.log('Method:', req.method);
     console.log('URL:', req.url);
     console.log('================================\n');
+
+    // Check webhook token if provided
+    const webhookToken = req.headers['authorization']?.replace('Bearer ', '') || 
+                        req.query.token || 
+                        req.body.token;
+                        
+    if (process.env.ADVANTA_WEBHOOK_TOKEN && 
+        webhookToken !== process.env.ADVANTA_WEBHOOK_TOKEN) {
+      console.log('Invalid webhook token received:', webhookToken);
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Invalid webhook token' 
+      });
+    }
 
     let rawPhoneNumber, message;
 
