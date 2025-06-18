@@ -105,51 +105,85 @@ const handleSmsWebhook = async (req, res) => {
     console.log('\n=== INCOMING SMS WEBHOOK REQUEST ===');
     console.log('Timestamp:', new Date().toISOString());
     console.log('Request IP:', req.ip);
+    console.log('Content-Type:', req.headers['content-type']);
     console.log('Headers:', JSON.stringify(req.headers, null, 2));
     console.log('Query params:', JSON.stringify(req.query, null, 2));
-    console.log('Body:', JSON.stringify(req.body, null, 2));
+    
+    // Handle different body formats
+    let body = req.body;
+    if (Buffer.isBuffer(req.body)) {
+      try {
+        const rawBody = req.body.toString('utf8');
+        console.log('Raw body:', rawBody);
+        body = JSON.parse(rawBody);
+      } catch (e) {
+        console.log('Failed to parse raw body as JSON, trying URL-decode');
+        try {
+          const params = new URLSearchParams(req.body.toString('utf8'));
+          body = Object.fromEntries(params);
+        } catch (e2) {
+          console.log('Failed to parse raw body as URL-encoded');
+          body = {};
+        }
+      }
+    }
+    
+    console.log('Parsed body:', JSON.stringify(body, null, 2));
     console.log('Method:', req.method);
     console.log('URL:', req.url);
     console.log('================================\n');
 
-    console.log('Environment variables:', {
-      NODE_ENV: process.env.NODE_ENV,
-      ADVANTA_SMS_API_URL: process.env.ADVANTA_SMS_API_URL,
-      ADVANTA_PARTNER_ID: process.env.ADVANTA_PARTNER_ID,
-      ADVANTA_SHORTCODE: process.env.ADVANTA_SHORTCODE
-    });
-    
     // Check if this is a GET request (Advanta might be using GET)
     let rawPhoneNumber, message;
     
     if (req.method === 'GET') {
       // Handle GET request parameters
-      rawPhoneNumber = req.query.msisdn || req.query.mobile;
+      rawPhoneNumber = req.query.msisdn || req.query.mobile || req.query.phoneNumber;
       message = req.query.message;
       console.log('Processing GET request with:', { rawPhoneNumber, message });
     } else {
       // Handle POST request body
-      if (req.body.msisdn && req.body.message) {
+      if (body.msisdn && body.message) {
         // Advanta's interactive shortcode format
-        rawPhoneNumber = req.body.msisdn;
-        message = req.body.message;
-      } else if (req.body.mobile && req.body.message) {
+        rawPhoneNumber = body.msisdn;
+        message = body.message;
+      } else if (body.mobile && body.message) {
         // Advanta's non-interactive shortcode format
-        rawPhoneNumber = req.body.mobile;
-        message = req.body.message;
-      } else if (req.body.phoneNumber && req.body.message) {
+        rawPhoneNumber = body.mobile;
+        message = body.message;
+      } else if (body.phoneNumber && body.message) {
         // Our test format (keeping for testing purposes)
-        rawPhoneNumber = req.body.phoneNumber;
-        message = req.body.message;
+        rawPhoneNumber = body.phoneNumber;
+        message = body.message;
       } else {
-        console.log('No matching format found in request body:', req.body);
-        throw new Error('Invalid request format: Missing phone number or message');
+        // Try to find any field that might contain a phone number
+        const possiblePhoneFields = ['msisdn', 'mobile', 'phoneNumber', 'phone', 'from'];
+        const possibleMessageFields = ['message', 'text', 'msg', 'content'];
+        
+        for (const field of possiblePhoneFields) {
+          if (body[field]) {
+            rawPhoneNumber = body[field];
+            break;
+          }
+        }
+        
+        for (const field of possibleMessageFields) {
+          if (body[field]) {
+            message = body[field];
+            break;
+          }
+        }
+        
+        if (!rawPhoneNumber || !message) {
+          console.log('No matching format found in request body:', body);
+          throw new Error('Invalid request format: Missing phone number or message');
+        }
       }
     }
     
     // Log the shortcode and partnerId if present (for debugging)
-    const shortcode = req.method === 'GET' ? req.query.shortcode : req.body.shortcode;
-    const partnerId = req.method === 'GET' ? req.query.partnerId : req.body.partnerId;
+    const shortcode = req.method === 'GET' ? req.query.shortcode : body.shortcode;
+    const partnerId = req.method === 'GET' ? req.query.partnerId : body.partnerId;
     
     if (shortcode) {
       console.log('Received from shortcode:', shortcode);
