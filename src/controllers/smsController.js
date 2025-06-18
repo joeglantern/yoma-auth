@@ -243,7 +243,13 @@ const processUserInput = async (phoneNumber, message) => {
           countryCodeAlpha2: "KE"
         });
         
-        await sendSms(phoneNumber, "Thank you for registering with Yoma!");
+        // Send a friendly success message with next steps
+        const successMessage = "🎉 Congratulations! You've successfully registered with Yoma!\n\n" +
+          "📱 Check your WhatsApp for an activation link from Yoma. Important: The link is only valid for 12 hours, so please activate your account soon!\n\n" +
+          "💫 Tell your friends about Yoma - together we can discover amazing youth opportunities!\n\n" +
+          "🌟 Welcome to the Yoma family!";
+        
+        await sendSms(phoneNumber, successMessage);
         clearSession(phoneNumber);
       } catch (error) {
         console.error('Registration error:', error);
