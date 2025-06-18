@@ -3,7 +3,7 @@ services:
     name: yoma-sms-service
     env: node
     buildCommand: npm install
-    startCommand: npm start
+    startCommand: node src/index.js
     envVars:
       - key: NODE_ENV
         value: production
