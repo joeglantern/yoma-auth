@@ -46,3 +46,5 @@ pids
 
 # Optional eslint cache
 .eslintcache 
+
+.cursorignore

@@ -119,8 +119,12 @@ const handleSmsWebhook = async (req, res) => {
     
     res.json({ success: true, message: 'SMS processed successfully' });
   } catch (error) {
-    console.error('Error handling SMS webhook:', error);
-    res.status(500).json({ success: false, message: 'Failed to process SMS' });
+    console.error('Error handling SMS webhook:', {
+      error: error.message,
+      stack: error.stack,
+      details: error.response?.data || error.response || error
+    });
+    res.status(500).json({ success: false, message: error.message || 'Failed to process SMS' });
   }
 };
 
