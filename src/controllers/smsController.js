@@ -101,14 +101,16 @@ const clearSession = (phoneNumber) => {
 
 const handleSmsWebhook = async (req, res) => {
   try {
-    // Log everything about the request
-    console.log('=== INCOMING SMS WEBHOOK REQUEST ===');
-    console.log('Headers:', req.headers);
-    console.log('Query params:', req.query);
-    console.log('Body:', req.body);
+    // Enhanced request logging
+    console.log('\n=== INCOMING SMS WEBHOOK REQUEST ===');
+    console.log('Timestamp:', new Date().toISOString());
+    console.log('Request IP:', req.ip);
+    console.log('Headers:', JSON.stringify(req.headers, null, 2));
+    console.log('Query params:', JSON.stringify(req.query, null, 2));
+    console.log('Body:', JSON.stringify(req.body, null, 2));
     console.log('Method:', req.method);
     console.log('URL:', req.url);
-    console.log('================================');
+    console.log('================================\n');
 
     console.log('Environment variables:', {
       NODE_ENV: process.env.NODE_ENV,
@@ -140,7 +142,7 @@ const handleSmsWebhook = async (req, res) => {
         rawPhoneNumber = req.body.phoneNumber;
         message = req.body.message;
       } else {
-        console.log('No matching format found in request body');
+        console.log('No matching format found in request body:', req.body);
         throw new Error('Invalid request format: Missing phone number or message');
       }
     }
