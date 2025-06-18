@@ -82,6 +82,7 @@ const STATES = {
 // Get user session
 const getSession = (phoneNumber) => {
   const sessions = cache.get(SESSION_CACHE_KEY) || {};
+  console.log('Current session for', phoneNumber, ':', sessions[phoneNumber]);
   return sessions[phoneNumber];
 };
 
@@ -90,6 +91,7 @@ const saveSession = (phoneNumber, sessionData) => {
   const sessions = cache.get(SESSION_CACHE_KEY) || {};
   sessions[phoneNumber] = sessionData;
   cache.put(SESSION_CACHE_KEY, sessions);
+  console.log('Saved session for', phoneNumber, ':', sessionData);
 };
 
 // Clear user session
@@ -97,6 +99,7 @@ const clearSession = (phoneNumber) => {
   const sessions = cache.get(SESSION_CACHE_KEY) || {};
   delete sessions[phoneNumber];
   cache.put(SESSION_CACHE_KEY, sessions);
+  console.log('Cleared session for', phoneNumber);
 };
 
 const handleSmsWebhook = async (req, res) => {
@@ -204,18 +207,25 @@ const handleSmsWebhook = async (req, res) => {
 };
 
 const processUserInput = async (phoneNumber, message) => {
+  console.log('Processing input for', phoneNumber, ':', message);
+  
   let session = getSession(phoneNumber) || {
     state: STATES.FIRST_NAME,
     data: {}
   };
 
+  console.log('Current session state:', session.state);
   const input = message.trim();
 
   switch (session.state) {
     case STATES.FIRST_NAME:
       if (input.toLowerCase() === 'start') {
+        console.log('Received START command, sending welcome message');
         await sendSms(phoneNumber, "Welcome to Yoma! What's your first name?");
+        session.state = STATES.FIRST_NAME;
+        saveSession(phoneNumber, session);
       } else {
+        console.log('Received first name:', input);
         session.data.firstName = input;
         session.state = STATES.SURNAME;
         saveSession(phoneNumber, session);

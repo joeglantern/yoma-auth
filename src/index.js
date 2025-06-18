@@ -55,19 +55,6 @@ app.use((req, res, next) => {
 // Shortcode webhook handler
 app.all(['/webhook', '/advanta-webhook'], handleSmsWebhook);
 
-// Message processing function
-async function processMessage(data) {
-  const phoneNumber = data.mobile || data.msisdn;
-  const message = data.message.trim().toUpperCase();
-
-  // Simple response logic
-  if (message === 'START') {
-    return "Welcome to Yoma! What's your first name?";
-  }
-  
-  return "Thank you for your message. We'll get back to you soon.";
-}
-
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
