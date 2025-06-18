@@ -5,9 +5,12 @@ const axios = require('axios');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Basic middleware for parsing requests
+// Parse JSON bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Import the SMS controller
+const { handleSmsWebhook } = require('./controllers/smsController');
 
 // Function to send SMS via Advanta API
 async function sendSms(phoneNumber, message) {
@@ -50,51 +53,7 @@ app.use((req, res, next) => {
 });
 
 // Shortcode webhook handler
-app.all(['/webhook', '/advanta-webhook'], async (req, res) => {
-  try {
-    console.log('Processing shortcode message...');
-    
-    // Extract message data based on request method
-    const messageData = req.method === 'GET' ? req.query : req.body;
-    
-    // Validate required fields
-    if (!messageData.shortcode || !messageData.message || !(messageData.mobile || messageData.msisdn)) {
-      console.log('Invalid request format:', messageData);
-      return res.status(400).json({
-        success: false,
-        message: 'Missing required fields. Required: shortcode, mobile/msisdn, message'
-      });
-    }
-
-    // Log the received message
-    console.log('Received message:', {
-      shortcode: messageData.shortcode,
-      mobile: messageData.mobile || messageData.msisdn,
-      message: messageData.message,
-      partnerId: messageData.partnerId
-    });
-
-    // Process the message
-    const responseMessage = await processMessage(messageData);
-
-    // Actively send the response via SMS
-    const phoneNumber = messageData.mobile || messageData.msisdn;
-    await sendSms(phoneNumber, responseMessage);
-
-    // Send success response to Advanta
-    res.json({
-      success: true,
-      message: 'Message processed and response sent'
-    });
-
-  } catch (error) {
-    console.error('Error processing message:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to process message'
-    });
-  }
-});
+app.all(['/webhook', '/advanta-webhook'], handleSmsWebhook);
 
 // Message processing function
 async function processMessage(data) {
