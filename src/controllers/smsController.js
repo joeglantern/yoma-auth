@@ -101,10 +101,19 @@ const clearSession = (phoneNumber) => {
 
 const handleSmsWebhook = async (req, res) => {
   try {
+    console.log('Received webhook request:', req.body);
+    console.log('Environment variables:', {
+      NODE_ENV: process.env.NODE_ENV,
+      ADVANTA_SMS_API_URL: process.env.ADVANTA_SMS_API_URL,
+      ADVANTA_PARTNER_ID: process.env.ADVANTA_PARTNER_ID,
+      ADVANTA_SHORTCODE: process.env.ADVANTA_SHORTCODE
+    });
+    
     const { phoneNumber: rawPhoneNumber, message } = req.body;
     
     // Normalize phone number
     const phoneNumber = normalizePhoneNumber(rawPhoneNumber);
+    console.log('Normalized phone number:', phoneNumber);
     
     await processUserInput(phoneNumber, message);
     
