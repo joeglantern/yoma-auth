@@ -34,8 +34,14 @@ const sendSms = async (phoneNumber, message) => {
 
     console.log('Advanta SMS API response:', response.data);
 
-    if (response.data.status !== 'success') {
-      throw new Error(`SMS sending failed: ${response.data.message || JSON.stringify(response.data)}`);
+    // Check if any response in the responses array has a response-code of 200
+    if (response.data.responses && Array.isArray(response.data.responses)) {
+      const successfulResponse = response.data.responses.some(r => r['response-code'] === 200);
+      if (!successfulResponse) {
+        throw new Error(`SMS sending failed: ${JSON.stringify(response.data)}`);
+      }
+    } else {
+      throw new Error(`Unexpected response format: ${JSON.stringify(response.data)}`);
     }
 
     return true;
