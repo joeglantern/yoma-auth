@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: yoma-sms-service
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: YOMA_API_URL
+        sync: false
+      - key: YOMA_CLIENT_ID
+        sync: false
+      - key: YOMA_CLIENT_SECRET
+        sync: false
+      - key: ADVANTA_API_KEY
+        sync: false
+      - key: ADVANTA_API_URL
+        sync: false
+    autoDeploy: true 
