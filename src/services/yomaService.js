@@ -28,7 +28,14 @@ const getAccessToken = async () => {
   if (token) return token;
 
   try {
-    const response = await axios.post(`${process.env.YOMA_AUTH_URL}/protocol/openid-connect/token`, 
+    console.log('Environment variables:');
+    console.log('YOMA_AUTH_URL:', process.env.YOMA_AUTH_URL);
+    console.log('YOMA_API_URL:', process.env.YOMA_API_URL);
+    
+    const tokenUrl = `${process.env.YOMA_AUTH_URL}/protocol/openid-connect/token`;
+    console.log('Attempting to get token from:', tokenUrl);
+
+    const response = await axios.post(tokenUrl, 
       new URLSearchParams({
         grant_type: 'client_credentials',
         client_id: process.env.YOMA_CLIENT_ID,
@@ -50,6 +57,7 @@ const getAccessToken = async () => {
     return token;
   } catch (error) {
     console.error('Error getting access token:', error.response?.data || error.message);
+    console.error('Full error:', error);
     throw new Error('Failed to get access token');
   }
 };
@@ -60,7 +68,10 @@ const initializeMappings = async () => {
     const token = await getAccessToken();
 
     // Fetch and map genders
-    const genderResponse = await axios.get(`${process.env.YOMA_API_URL}/lookup/gender`, {
+    const genderUrl = `${process.env.YOMA_API_URL}/lookup/gender`;
+    console.log('Fetching genders from:', genderUrl);
+    
+    const genderResponse = await axios.get(genderUrl, {
       headers: { Authorization: `Bearer ${token}` }
     });
     
@@ -73,7 +84,10 @@ const initializeMappings = async () => {
     console.log('Gender mappings initialized:', genderMap);
 
     // Fetch and map education levels
-    const educationResponse = await axios.get(`${process.env.YOMA_API_URL}/lookup/education`, {
+    const educationUrl = `${process.env.YOMA_API_URL}/lookup/education`;
+    console.log('Fetching education levels from:', educationUrl);
+    
+    const educationResponse = await axios.get(educationUrl, {
       headers: { Authorization: `Bearer ${token}` }
     });
     
@@ -104,8 +118,11 @@ const getEducationId = (educationInput) => {
 const registerUser = async (userData) => {
   try {
     const token = await getAccessToken();
+    const registerUrl = `${process.env.YOMA_API_URL}/externalpartner/user`;
+    console.log('Registering user at:', registerUrl);
+    
     const response = await axios.post(
-      `${process.env.YOMA_API_URL}/externalpartner/user`,
+      registerUrl,
       userData,
       {
         headers: {
