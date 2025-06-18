@@ -24,12 +24,21 @@ const sendSms = async (phoneNumber, message) => {
       throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
     }
 
+    // Format phone number for Advanta API (remove '+' if present)
+    const formattedPhone = phoneNumber.replace(/^\+/, '');
+
+    console.log('Sending SMS with params:', {
+      phoneNumber: formattedPhone,
+      message,
+      shortcode: process.env.ADVANTA_SHORTCODE
+    });
+
     const response = await axios.post(process.env.ADVANTA_SMS_API_URL, {
       apikey: process.env.ADVANTA_SMS_API_KEY,
       partnerID: process.env.ADVANTA_PARTNER_ID,
       shortcode: process.env.ADVANTA_SHORTCODE,
       message: message,
-      mobile: phoneNumber
+      mobile: formattedPhone
     });
 
     console.log('Advanta SMS API response:', response.data);
