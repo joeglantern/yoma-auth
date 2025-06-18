@@ -18,12 +18,24 @@ This service handles SMS-based user registration for the Yoma platform using the
 
 The following environment variables are required:
 
+### Yoma API Configuration
 ```env
-YOMA_API_URL=
-YOMA_CLIENT_ID=
-YOMA_CLIENT_SECRET=
-ADVANTA_API_KEY=
-ADVANTA_API_URL=
+YOMA_API_URL=https://api.yoma.world/api
+YOMA_AUTH_URL=https://auth.yoma.world/auth/realms/yoma
+YOMA_CLIENT_ID=your_client_id
+YOMA_CLIENT_SECRET=your_client_secret
+```
+
+### Advanta SMS Configuration
+```env
+ADVANTA_API_KEY=your_api_key
+ADVANTA_API_URL=https://api.advantasms.com
+ADVANTA_WEBHOOK_TOKEN=xS4tFJmsHJFyFGb5XQYj1KFol4CIw9jemRRBazHregA=
+```
+
+### Server Configuration
+```env
+PORT=3000
 ```
 
 ## Local Development
@@ -55,5 +67,13 @@ To deploy:
 1. Fork this repository
 2. Create a new Web Service on Render
 3. Connect your forked repository
-4. Add the required environment variables in the Render dashboard
+4. Add the required environment variables in the Render dashboard:
+   - YOMA_API_URL
+   - YOMA_AUTH_URL
+   - YOMA_CLIENT_ID
+   - YOMA_CLIENT_SECRET
+   - ADVANTA_API_KEY
+   - ADVANTA_API_URL
+   - ADVANTA_WEBHOOK_TOKEN
+   - PORT (optional, defaults to what Render provides)
 5. Deploy! 
