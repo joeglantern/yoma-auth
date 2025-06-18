@@ -105,7 +105,7 @@ const handleSmsWebhook = async (req, res) => {
     console.log('\n=== INCOMING SMS WEBHOOK REQUEST ===');
     console.log('Timestamp:', new Date().toISOString());
     console.log('Content-Type:', req.headers['content-type']);
-    console.log('Authorization:', req.headers['authorization']);
+    console.log('X-Advanta-Token:', req.headers['x-advanta-token']);
     console.log('Headers:', JSON.stringify(req.headers, null, 2));
     console.log('Query params:', JSON.stringify(req.query, null, 2));
     console.log('Body:', JSON.stringify(req.body, null, 2));
@@ -114,9 +114,7 @@ const handleSmsWebhook = async (req, res) => {
     console.log('================================\n');
 
     // Check webhook token if provided
-    const webhookToken = req.headers['authorization']?.replace('Bearer ', '') || 
-                        req.query.token || 
-                        req.body.token;
+    const webhookToken = req.headers['x-advanta-token'];
                         
     if (process.env.ADVANTA_WEBHOOK_TOKEN && 
         webhookToken !== process.env.ADVANTA_WEBHOOK_TOKEN) {
